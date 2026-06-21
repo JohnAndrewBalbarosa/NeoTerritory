@@ -1540,12 +1540,21 @@ export default function PatternsLearnPage(): JSX.Element {
                       starterCode={studioPracticalConfig(activeModule)!.starterCode}
                       completing={!!practicalSaving[activeModule.id]}
                       error={practicalErrors[activeModule.id] ?? null}
-                      proceedLabel={requiredModuleIds.every((id) => completedIds.has(id)) ? 'Proceed to Post-Test' : 'Proceed to Next Module'}
+                      proceedLabel={requiredModuleIds.every((rid) => rid === activeModule.id || completedIds.has(rid)) ? 'Proceed to Post-Test' : 'Proceed to Next Module'}
                       onProceed={async () => {
-                        // Decide where to go from committed, cycle-scoped
-                        // eligibility, then release the completed module.
-                        const dest = await resolvePostTestDestination();
+                        // FINALIZE completion locally now — this is what removes
+                        // the module from the path so the next one shifts in. Doing
+                        // it here (not on detect) keeps the practical page mounted
+                        // for the completion screen; flipping mastery on detect
+                        // removed the page mid-render and crashed (React #300).
+                        const moduleId = activeModule.id;
+                        setTheoryPassedIds((prev) => new Set(prev).add(moduleId));
+                        setBloomMasteryByModule((prev) => ({ ...prev, [moduleId]: 6 }));
+                        setCompletedIds((prev) => new Set(prev).add(moduleId));
                         setCompletedModulePendingExitId(null);
+                        // Route from committed, cycle-scoped eligibility (the
+                        // completion was already persisted on detection).
+                        const dest = await resolvePostTestDestination();
                         if (dest === 'post-test') {
                           navigate('/post-test');
                         } else if (dest === 'dashboard') {
@@ -1563,7 +1572,12 @@ export default function PatternsLearnPage(): JSX.Element {
                         setPracticalErrors((prev) => ({ ...prev, [activeModule.id]: null }));
                         setPracticalSaving((prev) => ({ ...prev, [activeModule.id]: true }));
                         try {
-                          // Record the practical as passed-by-detection (analytics).
+                          // Persist completion to the BACKEND now (durable across
+                          // refresh): the practical record + full progress. We do
+                          // NOT touch local mastery/completedIds here — those remove
+                          // the practical page mid-render so the completion screen
+                          // could never show (and it crashed in prod). Local
+                          // finalize happens on Proceed.
                           if (token && !unlockAll) {
                             await saveLearningAssessment({
                               assessmentType: 'practical',
@@ -1578,22 +1592,14 @@ export default function PatternsLearnPage(): JSX.Element {
                               }],
                             });
                           }
-                          // Detection = module complete. Mark complete + persist,
-                          // then let the next module open (completed modules drop
-                          // out of `steps`, shifting the next one into view).
                           const nextTheoryPassedIds = new Set(theoryPassedIds).add(activeModule.id);
                           const nextCompletedIds = new Set(completedIds).add(activeModule.id);
                           const nextBloomMasteryByModule = { ...effectiveBloomMasteryByModule, [activeModule.id]: 6 };
-                          setTheoryPassedIds(nextTheoryPassedIds);
-                          setPracticalDone((prev) => new Set(prev).add(activeModule.id));
-                          setCompletedIds(nextCompletedIds);
-                          setBloomMasteryByModule(nextBloomMasteryByModule);
                           await persistLearningProgress(nextCompletedIds, nextTheoryPassedIds, nextBloomMasteryByModule);
-                          // Don't auto-navigate. Keep the just-completed module
-                          // on screen (pendingExit) so we can show the
-                          // "module completed" confirmation + a Proceed button;
-                          // the learner advances explicitly.
-                          setCompletedModulePendingExitId(activeModule.id);
+                          // Local: only flag practicalDone → flips isPassed so the
+                          // "You have completed this module" screen renders while the
+                          // practical page stays mounted (no collapse, no #300).
+                          setPracticalDone((prev) => new Set(prev).add(activeModule.id));
                         } catch (err) {
                           setPracticalErrors((prev) => ({
                             ...prev,
