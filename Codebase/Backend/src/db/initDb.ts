@@ -623,6 +623,25 @@ export function initDb(): void {
     /* column already exists — nothing to do */
   }
 
+  // Lightweight RESUME position — where the learner last stopped, kept on the
+  // same progress row so it is naturally scoped per (user, session) and never
+  // duplicates the completion model. These are NOT completion fields: setting
+  // them must never mark a module complete or change unlock state. Each is
+  // nullable and added idempotently via the duplicate-column catch.
+  for (const col of [
+    `resume_module_id TEXT`,
+    `resume_module_category TEXT`,
+    `resume_stage_kind TEXT`,      // 'lesson' | 'theoretical' | 'practical'
+    `resume_cycle_id TEXT`,        // active cycle this resume belongs to (guards cross-cycle restore)
+    `resume_updated_at TEXT`,      // last-visited timestamp
+  ]) {
+    try {
+      db.prepare(`ALTER TABLE learning_progress ADD COLUMN ${col}`).run();
+    } catch {
+      /* column already exists — nothing to do */
+    }
+  }
+
   // ── learning_question_results (per-question theoretical-exam results) ────
   // One row per (user, session, module, question).
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_question_results (

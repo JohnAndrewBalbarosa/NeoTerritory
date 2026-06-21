@@ -27,6 +27,11 @@ interface ProgressRow {
   theory_passed_module_ids: string | null;
   bloom_mastery_by_module: string | null;
   skipped_module_ids: string | null;
+  resume_module_id?: string | null;
+  resume_module_category?: string | null;
+  resume_stage_kind?: string | null;
+  resume_cycle_id?: string | null;
+  resume_updated_at?: string | null;
 }
 
 type AssessmentType = 'pretest' | 'posttest' | 'posttest2' | 'practical';
@@ -313,6 +318,7 @@ router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
+    // Completion read is UNCHANGED (first progress row for the learner).
     const row = db
       .prepare(
         `SELECT completed_module_ids, last_unlocked_module_id, theory_passed_module_ids, bloom_mastery_by_module, skipped_module_ids
@@ -320,12 +326,34 @@ router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
       )
       .get(req.user.id) as ProgressRow | undefined;
 
+    // Resume position is read separately (most recently visited), so it never
+    // affects which completion row is returned.
+    const resumeRow = db
+      .prepare(
+        `SELECT resume_module_id, resume_module_category, resume_stage_kind, resume_cycle_id, resume_updated_at
+         FROM learning_progress
+         WHERE user_id = ? AND resume_module_id IS NOT NULL
+         ORDER BY (resume_updated_at IS NULL), resume_updated_at DESC LIMIT 1`,
+      )
+      .get(req.user.id) as ProgressRow | undefined;
+
+    const resume = resumeRow?.resume_module_id
+      ? {
+          moduleId: resumeRow.resume_module_id,
+          category: resumeRow.resume_module_category ?? null,
+          stage: resumeRow.resume_stage_kind ?? null,
+          cycleId: resumeRow.resume_cycle_id ?? null,
+          updatedAt: resumeRow.resume_updated_at ?? null,
+        }
+      : null;
+
     res.json({
       completedModuleIds: parseStringArrayColumn(row?.completed_module_ids),
       lastUnlockedModuleId: row?.last_unlocked_module_id ?? null,
       theoryPassedModuleIds: parseStringArrayColumn(row?.theory_passed_module_ids),
       bloomMasteryByModule: parseBloomMasteryByModule(row?.bloom_mastery_by_module),
       skippedModuleIds: parseStringArrayColumn(row?.skipped_module_ids),
+      resume,
     });
   } catch (err) {
     next(err);
@@ -461,6 +489,60 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
       bloomMasteryByModule,
       skippedModuleIds,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Lightweight RESUME position upsert — "where the learner stopped". Idempotent
+// per (user, session): re-posting the same position just refreshes it (clicking
+// Back to Dashboard repeatedly creates no duplicate rows). It writes ONLY the
+// resume_* columns, so it can never overwrite completion records, assessment
+// attempts, scores, unlock state, or module assignments. Scoped to the
+// authenticated learner — a learner can only write their own resume.
+const RESUME_STAGES = new Set(['lesson', 'theoretical', 'practical']);
+
+router.put('/resume', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const body = (req.body ?? {}) as {
+      sessionId?: unknown; moduleId?: unknown; category?: unknown; stage?: unknown; cycleId?: unknown;
+    };
+    const sessionId = typeof body.sessionId === 'string' && body.sessionId ? body.sessionId : null;
+    const moduleId = typeof body.moduleId === 'string' && body.moduleId.trim() ? body.moduleId.trim() : null;
+    if (!moduleId) {
+      res.status(400).json({ error: 'moduleId required' });
+      return;
+    }
+    const category = typeof body.category === 'string' && body.category ? body.category : null;
+    const stage = typeof body.stage === 'string' && RESUME_STAGES.has(body.stage) ? body.stage : 'lesson';
+    const cycleId = typeof body.cycleId === 'string' && body.cycleId ? body.cycleId : null;
+    const now = new Date().toISOString();
+
+    // Update ONLY the resume columns of this learner's (user, session) row.
+    const upd = db
+      .prepare(
+        `UPDATE learning_progress
+           SET resume_module_id = ?, resume_module_category = ?, resume_stage_kind = ?, resume_cycle_id = ?, resume_updated_at = ?
+         WHERE user_id = ? AND session_id IS ?`,
+      )
+      .run(moduleId, category, stage, cycleId, now, req.user.id, sessionId);
+
+    // No progress row yet for this (user, session) → create one carrying only the
+    // resume fields (completion columns keep their table defaults). No PK clash:
+    // if a matching row existed the UPDATE above would have hit it.
+    if (upd.changes === 0) {
+      db.prepare(
+        `INSERT INTO learning_progress
+           (user_id, session_id, resume_module_id, resume_module_category, resume_stage_kind, resume_cycle_id, resume_updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(req.user.id, sessionId, moduleId, category, stage, cycleId, now);
+    }
+
+    res.json({ ok: true, resume: { moduleId, category, stage, cycleId, updatedAt: now } });
   } catch (err) {
     next(err);
   }

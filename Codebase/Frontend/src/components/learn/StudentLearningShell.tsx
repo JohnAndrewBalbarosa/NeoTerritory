@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { navigate } from '../../logic/router';
-import { fetchLearningAssessments } from '../../api/client';
+import { fetchLearningAssessments, saveLearningResume } from '../../api/client';
 import { preTestPathForNext } from '../../logic/learnerRouting';
 import { hasFreshSavedPretest } from '../../logic/pretestFreshness';
 import PatternsLearnPage from '../marketing/patterns/PatternsLearnPage';
@@ -15,7 +15,37 @@ export default function StudentLearningShell() {
   const { token, user, clearAuth } = useAppStore();
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
   const progress = useAppStore((s) => s.learningProgressSummary);
+  const learningResume = useAppStore((s) => s.learningResume);
+  const lmsSessionId = useAppStore((s) => s.lmsSessionId);
   const [pretestGate, setPretestGate] = useState<'checking' | 'fresh' | 'needs-pretest'>('checking');
+  const [savingBack, setSavingBack] = useState(false);
+  const [backError, setBackError] = useState<string | null>(null);
+
+  // Back to Dashboard: persist the latest resume position (awaited — so the spot
+  // is durable before we leave), then navigate. On failure we keep the learner
+  // on the Learning Path and surface a retry, never silently dropping the spot.
+  // This is navigation only: it never signs out, resets the cycle, or marks the
+  // current module complete (it writes only the lightweight resume_* fields).
+  const handleBackToDashboard = async () => {
+    setSavingBack(true);
+    setBackError(null);
+    try {
+      if (learningResume) {
+        await saveLearningResume({
+          moduleId: learningResume.moduleId,
+          category: learningResume.category,
+          stage: learningResume.stage,
+          cycleId: learningResume.cycleId,
+          sessionId: lmsSessionId ?? undefined,
+        });
+      }
+      navigate('/intern-dashboard');
+    } catch {
+      setBackError('Could not save your place. Please try again.');
+    } finally {
+      setSavingBack(false);
+    }
+  };
 
   const progressPct =
     progress && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
@@ -115,16 +145,27 @@ export default function StudentLearningShell() {
         Skip to main content
       </a>
       <header className="nt-learn-shell__bar nt-learn-shell__bar--learn">
-        <button
-          type="button"
-          className="nt-learn-shell__brand"
-          onClick={() => navigate('/patterns/learn')}
-          aria-label="CodiNeo Learning home"
-        >
-          <span className="nt-learn-shell__wordmark">CodiNeo</span>
-          <span className="nt-learn-shell__divider" aria-hidden="true">/</span>
-          <span className="nt-learn-shell__crumb">Learning</span>
-        </button>
+        <div className="nt-learn-shell__bar-left">
+          <button
+            type="button"
+            className="nt-learn-shell__brand"
+            onClick={() => navigate('/patterns/learn')}
+            aria-label="CodiNeo Learning home"
+          >
+            <span className="nt-learn-shell__wordmark">CodiNeo</span>
+            <span className="nt-learn-shell__divider" aria-hidden="true">/</span>
+            <span className="nt-learn-shell__crumb">Learning</span>
+          </button>
+          <button
+            type="button"
+            className="nt-learn-shell__back"
+            onClick={handleBackToDashboard}
+            disabled={savingBack}
+            aria-label="Back to Dashboard"
+          >
+            <span aria-hidden="true">←</span> {savingBack ? 'Saving…' : 'Back to Dashboard'}
+          </button>
+        </div>
         <h1 className="nt-learn-shell__title">Learning Path</h1>
         <div className="nt-learn-shell__bar-right">
           {user?.email && (
@@ -144,6 +185,14 @@ export default function StudentLearningShell() {
           </button>
         </div>
       </header>
+      {backError ? (
+        <div className="nt-learn-shell__back-error" role="alert">
+          <span>{backError}</span>
+          <button type="button" className="nt-learn-shell__back-retry" onClick={handleBackToDashboard} disabled={savingBack}>
+            {savingBack ? 'Saving…' : 'Retry'}
+          </button>
+        </div>
+      ) : null}
       {progress && progress.total > 0 ? (
         <div
           className="nt-learn-shell__progress"

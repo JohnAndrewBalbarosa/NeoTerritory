@@ -191,6 +191,11 @@ interface AppState {
   // StudentLearningShell's header progress bar. Counts only modules the
   // learner actually has to study (pre-test-exempt modules are excluded).
   learningProgressSummary: { done: number; total: number } | null;
+  // Current resume position ("where the learner stopped"), written by
+  // PatternsLearnPage as the learner moves between modules/stages and read by
+  // StudentLearningShell's "Back to Dashboard" button so it can persist the spot
+  // before navigating. NOT completion state.
+  learningResume: { moduleId: string; category: string | null; stage: 'lesson' | 'theoretical' | 'practical'; cycleId: string | null } | null;
   // Persistent multi-file submission slots; survive AnalysisForm unmount so
   // tabbing away and back (or running an analysis) doesn't drop the user's
   // other files. Empty array = legacy single-file mode (AnalysisForm seeds
@@ -237,6 +242,7 @@ interface AppState {
   setMasteredLevels: (moduleId: string, levels: number[]) => void;
   setLmsSessionId: (id: string | null) => void;
   setLearningProgressSummary: (summary: { done: number; total: number } | null) => void;
+  setLearningResume: (resume: { moduleId: string; category: string | null; stage: 'lesson' | 'theoretical' | 'practical'; cycleId: string | null } | null) => void;
   bulkSetLinePatternOverrides: (overrides: Record<number, string>) => void;
   bulkClearLinePatternOverrides: (lines: number[]) => void;
   setSubmissionFiles: (files: Array<{ id: string; name: string; text: string }>) => void;
@@ -285,6 +291,7 @@ export const useAppStore = create<AppState>((set) => ({
   masteredLevelsByModule: readScopedJsonRecord<number[]>(LMS_MASTERED_LEVELS_KEY, storedScope),
   lmsSessionId: readScopedSessionId(storedScope),
   learningProgressSummary: null,
+  learningResume: null,
   submissionFiles: [],
 
   setAuth: (token, user) => {
@@ -335,6 +342,7 @@ export const useAppStore = create<AppState>((set) => ({
       masteredLevelsByModule: {},
       lmsSessionId: null,
       learningProgressSummary: null,
+      learningResume: null,
       activeTab: 'submit',
       aiStatus: 'idle',
       aiJobId: null,
@@ -464,6 +472,7 @@ export const useAppStore = create<AppState>((set) => ({
     return { lmsSessionId: id };
   }),
   setLearningProgressSummary: (summary) => set({ learningProgressSummary: summary }),
+  setLearningResume: (resume) => set({ learningResume: resume }),
   clearLinePatternOverride: (line) => set((s) => {
     const next = { ...s.linePatternOverrides };
     delete next[line];

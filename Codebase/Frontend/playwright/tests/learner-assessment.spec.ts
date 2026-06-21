@@ -531,4 +531,91 @@ test.describe('learner hub smoke', () => {
     await expect(practicalPane).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('.nt-practical__target')).toBeVisible({ timeout: 10_000 });
   });
+
+  // Practical Exam = Studio detect-to-pass: the learner writes code, the analyser
+  // detects the module's target pattern, the module shows "You have completed this
+  // module" with a Proceed button, and clicking it advances. /api/analyze is mocked
+  // to return a detection so the flow is deterministic (no live microservice).
+  test('practical studio: detecting the target pattern shows the completion screen and a Proceed button', async ({ page }) => {
+    await seedPersistentLearnerSession(page);
+
+    const createdAt = new Date().toISOString();
+    const courseUpdatedAt = new Date(Date.now() - 1_000).toISOString();
+
+    // Single pattern module: a lesson, ONE conceptual MCQ (correct = index 0),
+    // and a practicalExam whose target the analyser must detect ('singleton').
+    const modules = [{
+      id: 'creational-singleton',
+      category: 'creational',
+      title: 'Singleton',
+      eyebrow: 'Creational',
+      intro: 'Singleton intro.',
+      sections: [{ heading: 'Lesson', body: 'A Singleton guarantees one instance.' }],
+      theoreticalExam: {
+        kind: 'theoretical',
+        questions: [
+          { type: 'mcq', question: 'One instance?', options: ['Yes', 'No'], correctIndex: 0, taxonomy: 'understanding' },
+        ],
+      },
+      practicalExam: { kind: 'practical', patternSlug: 'singleton', patternName: 'Singleton', family: 'Creational', prompt: 'Write a Singleton.', taxonomy: 'applying' },
+    }];
+
+    await page.route('**/api/learning/modules', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ modules }) }));
+    // Fresh pretest so the learner clears the gate (mirrors the conceptual test).
+    await page.route('**/api/learning/assessments', (r) => r.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        attempts: [{ id: 1, assessmentType: 'pretest', sessionId: null, questionCount: 1, cycleId: 'cyc-1', createdAt }],
+        answers: [{ id: 1, attemptId: 1, assessmentType: 'pretest', assessmentIndex: 0, moduleId: 'creational-singleton', questionIndex: 0, selectedIndex: 0, responseText: '', questionKind: 'theoretical', createdAt }],
+        courseUpdatedAt,
+      }),
+    }));
+    const progressPuts: unknown[] = [];
+    await page.route('**/api/learning/progress', async (route) => {
+      if (route.request().method() === 'PUT') { progressPuts.push(route.request().postDataJSON()); return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); }
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ completedModuleIds: [], theoryPassedModuleIds: [], bloomMasteryByModule: {}, skippedModuleIds: [], resume: null }) });
+    });
+    await page.route('**/api/learning/answers', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, recorded: 1 }) }));
+    await page.route('**/api/learning/resume', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) }));
+    await page.route('**/api/runs**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+
+    // The mocked analyser "detects" Singleton — this is the single pass condition.
+    await page.route('**/api/analyze', (r) => r.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify({
+        id: 999, status: 'complete', pendingId: null, aiJobId: null, aiStatus: 'disabled',
+        files: [{ name: 'snippet.cpp', code: 'class Singleton {};' }],
+        detectedPatterns: [{ patternId: 'creational.singleton', patternName: 'Singleton', confidence: 0.95 }],
+        ranking: { ambiguousCandidates: [] },
+        structureScore: 0, modernizationScore: 0, findingsCount: 0,
+      }),
+    }));
+
+    await page.goto('/patterns/learn', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByTestId('student-learning-shell')).toBeVisible({ timeout: 10_000 });
+
+    // Lesson → Conceptual Assessment.
+    await page.locator('.nt-pager__arrow--next').first().click();
+    await page.locator('.nt-bloom-question__option input[type="radio"]').first().check();
+    await page.getByRole('button', { name: 'Submit', exact: true }).click();
+
+    // Theory passes → go to the Practical (Studio).
+    await page.getByRole('button', { name: 'Proceed to Practical Assessment', exact: true }).click();
+    await expect(page.getByTestId('practical-studio-frame')).toBeVisible({ timeout: 10_000 });
+
+    // Write code + run the analyser (mocked → detects Singleton).
+    await page.locator('.file-slot-textarea').first().fill('class Singleton { public: static Singleton& get(); };');
+    await page.locator('[data-testid="analyze-btn"]').click();
+
+    // Detection → completion screen + Proceed button (the new behaviour).
+    await expect(page.getByText('You have completed this module', { exact: true })).toBeVisible({ timeout: 15_000 });
+    const proceed = page.getByRole('button', { name: /Proceed to (Post-Test|Next Module)/ });
+    await expect(proceed).toBeVisible();
+    // Completion was persisted (module marked complete), not skipped.
+    expect(progressPuts.length).toBeGreaterThan(0);
+
+    // Proceed advances away from the practical (last/only module → Post-Test).
+    await proceed.click();
+    await expect(page).not.toHaveURL(/\/patterns\/learn$/, { timeout: 10_000 });
+  });
 });

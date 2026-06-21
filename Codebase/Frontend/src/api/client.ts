@@ -273,6 +273,17 @@ export interface LearningProgress {
   // only optional-review state not reconstructable from scores or completion.
   // Optional so a backend predating the column degrades gracefully.
   skippedModuleIds?: string[];
+  // Lightweight resume position ("where the learner stopped"). NOT completion —
+  // a saved resume never marks a module complete. Null when nothing saved.
+  resume?: LearningResume | null;
+}
+
+export interface LearningResume {
+  moduleId: string;
+  category: string | null;
+  stage: 'lesson' | 'theoretical' | 'practical' | null;
+  cycleId: string | null;
+  updatedAt: string | null;
 }
 
 // D92: public learning content (no auth). Returns the published modules in the
@@ -289,6 +300,23 @@ export async function fetchLearningModules(): Promise<LearningModuleDTO[]> {
 // these are only meaningful for signed-in users; callers guard on token.
 export async function fetchLearningProgress(): Promise<LearningProgress> {
   return apiFetch<LearningProgress>('/api/learning/progress');
+}
+
+// Lightweight resume-position upsert ("where the learner stopped"). Idempotent
+// per (user, session); writes only the resume_* columns server-side, so it can
+// never overwrite completion/assessment/unlock state. Awaited by the Back to
+// Dashboard button; fired (best-effort) when the learner changes module/stage.
+export async function saveLearningResume(payload: {
+  moduleId: string;
+  category?: string | null;
+  stage?: 'lesson' | 'theoretical' | 'practical' | null;
+  cycleId?: string | null;
+  sessionId?: string | null;
+}): Promise<void> {
+  await apiFetch('/api/learning/resume', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function saveLearningProgress(

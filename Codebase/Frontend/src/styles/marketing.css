@@ -8315,6 +8315,57 @@ body[data-surface] {
   text-transform: uppercase;
   font-size: 0.78rem;
 }
+.nt-learn-shell__bar-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  min-width: 0;
+}
+/* Back to Dashboard — themed pill in the upper-left, deliberately separate from
+   the Sign Out control on the right (different actions). */
+.nt-learn-shell__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: 1px solid var(--nt-mkt-line);
+  color: var(--nt-mkt-text);
+  border-radius: 999px;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.nt-learn-shell__back:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.nt-learn-shell__back:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+.nt-learn-shell__back-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.82rem;
+  color: #fecaca;
+  background: rgba(190, 18, 60, 0.18);
+  border-bottom: 1px solid rgba(190, 18, 60, 0.4);
+}
+.nt-learn-shell__back-retry {
+  background: transparent;
+  border: 1px solid rgba(254, 202, 202, 0.5);
+  color: #fecaca;
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+}
 .nt-learn-shell__bar-right {
   display: inline-flex;
   align-items: center;

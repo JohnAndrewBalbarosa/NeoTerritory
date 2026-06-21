@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { navigate } from '../../../logic/router';
 import {
   fetchLearningAssessments,
@@ -6,6 +6,8 @@ import {
   saveLearningAnswers,
   saveLearningAssessment,
   saveLearningProgress,
+  saveLearningResume,
+  type LearningResume,
 } from '../../../api/client';
 import {
   CATEGORY_META,
@@ -18,6 +20,8 @@ import {
   type BloomTaxonomy,
 } from '../../../data/learningModules';
 import { BloomQuestionRenderer } from '../../learn/BloomQuestionRenderer';
+import StudioSurface from '../../studio/StudioSurface';
+import type { AnalysisRun } from '../../../types/api';
 import {
   evaluateFoundationPretestFromAssessments,
   scoreStoredObjectiveAssessment,
@@ -204,10 +208,33 @@ export function visibleTheoryQuestionIndexesFor(
     // the ORIGINAL source index (i) — never reindexed — so saved analytics stay
     // aligned with existing learning_question_results rows.
     if (q.generatedFallback) return;
+    // Studio (pattern-detection) questions no longer live in the Conceptual
+    // Assessment — the analyzer detect-to-pass step is the Practical Exam now
+    // (see PracticalExamBlock). Excluding them here removes the duplicate studio
+    // and leaves the conceptual quiz as MCQ / identification only.
+    if (q.type === 'studio') return;
     const level = bloomLevelForTaxonomy(q.taxonomy || 'remembering');
     if (level > masteryLevel) indexes.push(i);
   });
   return indexes;
+}
+
+// Studio config for a module's Practical Exam: the target pattern the analyser
+// must detect + an editor seed. Prefers the module's authored studio question
+// (every pattern module ships one, all with starter code); falls back to the
+// practicalExam's own patternSlug/starterCode. Null = no practical studio.
+export function studioPracticalConfig(
+  module: LearningModule | undefined,
+): { targetPatternSlug: string; starterCode?: string } | null {
+  if (!module) return null;
+  const sq = module.theoreticalExam?.questions.find((q) => q.type === 'studio');
+  if (sq && sq.type === 'studio') {
+    return { targetPatternSlug: sq.targetPatternSlug, starterCode: sq.starterCode };
+  }
+  if (module.practicalExam?.patternSlug) {
+    return { targetPatternSlug: module.practicalExam.patternSlug, starterCode: module.practicalExam.starterCode };
+  }
+  return null;
 }
 
 export function lessonPagesFor(
@@ -534,21 +561,34 @@ function PracticalExamBlock({
   moduleId,
   exam,
   isPassed,
-  answer,
-  saving,
   error,
-  onAnswerChange,
-  onSave,
+  targetPatternSlug,
+  starterCode,
+  completing,
+  onDetected,
+  onProceed,
+  proceedLabel,
 }: {
   moduleId: string;
   exam: PracticalExam;
   isPassed: boolean;
-  answer: string;
-  saving: boolean;
+  targetPatternSlug: string;
+  starterCode?: string;
+  completing: boolean;
   error: string | null;
-  onAnswerChange: (next: string) => void;
-  onSave: () => void;
+  onDetected: (run: AnalysisRun) => void;
+  onProceed: () => void;
+  proceedLabel: string;
 }): JSX.Element {
+  // The Practical Exam IS the Studio: the learner writes code and the module
+  // completes (unlocking the next module) ONLY when the analyser detects this
+  // module's target design pattern. We reuse StudioSurface unchanged — the
+  // detection callback is the single pass condition. Mirror StudioRenderer's
+  // session reset so the editor starts clean per practical.
+  useEffect(() => {
+    useAppStore.getState().resetSession();
+  }, [targetPatternSlug, starterCode]);
+
   return (
     <section className="nt-practical nt-practical--studio" id={anchorId(moduleId, 'practical')} aria-label="Practical exam">
       <header className="nt-practical__head">
@@ -558,22 +598,31 @@ function PracticalExamBlock({
         </h3>
         <p className="nt-practical__prompt">{exam.prompt}</p>
       </header>
-      {!isPassed ? (
-        <div className="nt-practical__composer">
-          <textarea
-            className="nt-practical__editor"
-            value={answer}
-            onChange={(e) => onAnswerChange(e.target.value)}
-            placeholder="Paste the practical answer or Studio code output here..."
-            rows={10}
+      {isPassed ? (
+        <section className="nt-exam-result" data-state="perfect" role="status" aria-live="polite">
+          <div className="nt-exam-result__icon" aria-hidden="true"><IconCheck size={22} /></div>
+          <div className="nt-exam-result__body">
+            <h3 className="nt-exam-result__title">You have completed this module</h3>
+            <p className="nt-exam-result__copy">
+              The analyser detected {exam.patternName}. Your progress is saved.
+            </p>
+            <div className="nt-exam-result__actions">
+              <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={onProceed}>
+                {proceedLabel}
+              </button>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <div className="nt-studio-frame" data-testid="practical-studio-frame">
+          <StudioSurface
+            key={`${targetPatternSlug}:${starterCode || ''}`}
+            targetPatternSlug={targetPatternSlug}
+            starterCode={starterCode}
+            onPatternDetected={(run) => { if (!completing) onDetected(run); }}
           />
-          <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Practical Answer'}
-          </button>
           {error ? <p className="nt-assessment__hint" role="alert">{error}</p> : null}
         </div>
-      ) : (
-        <p className="nt-practical__verdict nt-practical__verdict--pass">Verified.</p>
       )}
     </section>
   );
@@ -588,6 +637,14 @@ export default function PatternsLearnPage(): JSX.Element {
   const unlockAll = useMemo(() => readUnlockAllOverride(), []);
   const { findModule, modulesInCategory: modulesInCat, loaded: contentLoaded } = useLearningModules();
   const setLearningProgressSummary = useAppStore((s) => s.setLearningProgressSummary);
+  const setLearningResume = useAppStore((s) => s.setLearningResume);
+  // Resume plumbing: the active cycle (scopes the resume + guards cross-cycle
+  // restore), the resume loaded from the server, and a one-shot "applied" flag
+  // so restoring the saved position never fights the learner's own navigation.
+  const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
+  const [pendingResume, setPendingResume] = useState<LearningResume | null>(null);
+  const [progressLoaded, setProgressLoaded] = useState(false);
+  const resumeAppliedRef = useRef(false);
   const { groups: allGroups, steps: allSteps } = useMemo(() => buildCategoryGroups(modulesInCat), [contentLoaded, modulesInCat]);
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -605,7 +662,6 @@ export default function PatternsLearnPage(): JSX.Element {
   const [theoryErrors, setTheoryErrors] = useState<Record<string, string | null>>({});
   const [theoryAttempts, setTheoryAttempts] = useState<Record<string, number>>({});
   const [completedModulePendingExitId, setCompletedModulePendingExitId] = useState<string | null>(null);
-  const [practicalAnswers, setPracticalAnswers] = useState<Record<string, string>>({});
   const [practicalSaving, setPracticalSaving] = useState<Record<string, boolean>>({});
   const [practicalErrors, setPracticalErrors] = useState<Record<string, string | null>>({});
   const [practicalDone, setPracticalDone] = useState<Set<string>>(new Set());
@@ -769,6 +825,7 @@ export default function PatternsLearnPage(): JSX.Element {
         // surfaces consistent. (Guests have a cycleId too; the non-cycle fallback
         // only applies to legacy attempts with no cycle.)
         const cycleId = resolvePostTestCycleId(assessments);
+        setActiveCycleId(cycleId);
         const preScore = cycleId
           ? scoreStoredObjectiveAssessmentForCycle(modules, assessments, 'pretest', cycleId)
           : scoreStoredObjectiveAssessment(modules, assessments, 'pretest');
@@ -815,9 +872,12 @@ export default function PatternsLearnPage(): JSX.Element {
         setTheoryPassedIds(new Set(progress.theoryPassedModuleIds ?? []));
         setSkippedIds(new Set(progress.skippedModuleIds ?? []));
         setBloomMasteryByModule(progress.bloomMasteryByModule ?? {});
+        setPendingResume(progress.resume ?? null);
+        setProgressLoaded(true);
       })
       .catch((err) => {
         if (!cancelled) {
+          setProgressLoaded(true);
           console.error('Failed to load learning progress:', err);
         }
       });
@@ -903,6 +963,59 @@ export default function PatternsLearnPage(): JSX.Element {
     },
     [steps],
   );
+
+  // Resume autosave: as the learner moves between modules/stages, record where
+  // they are — a cheap store write (read by the header's Back to Dashboard
+  // button) plus a debounced best-effort server save. This is a lightweight
+  // position only; it NEVER marks a module complete or changes unlock state.
+  // Guests / dev-unlock are skipped (no durable server identity to scope to).
+  useEffect(() => {
+    if (!activeModule || !activeStep) return;
+    const stage: 'lesson' | 'theoretical' | 'practical' =
+      currentPage?.kind === 'theoretical' ? 'theoretical'
+      : currentPage?.kind === 'practical' ? 'practical'
+      : 'lesson';
+    const here = { moduleId: activeModule.id, category: activeStep.category as string, stage, cycleId: activeCycleId };
+    setLearningResume(here);
+    // Don't persist to the server until the one-shot restore has settled, so the
+    // initial default (module 0) can't clobber a saved resume before it loads.
+    if (!token || unlockAll || !resumeAppliedRef.current) return;
+    const t = setTimeout(() => {
+      void saveLearningResume({
+        moduleId: here.moduleId,
+        category: here.category,
+        stage: here.stage,
+        cycleId: here.cycleId,
+        sessionId: lmsSessionId ?? undefined,
+      }).catch(() => { /* best-effort; Back to Dashboard does an awaited save */ });
+    }, 700);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeModule?.id, activeStep?.category, currentPage?.kind, token, unlockAll, activeCycleId, lmsSessionId, setLearningResume]);
+  // Clear the shared resume pointer on unmount so nothing stale lingers.
+  useEffect(() => () => setLearningResume(null), [setLearningResume]);
+
+  // One-shot restore of the saved resume position, once content + progress have
+  // loaded. Runs at most once (ref-guarded) so it never overrides the learner's
+  // own navigation. Falls back to the default (first incomplete visible module)
+  // when the saved module is no longer assigned/visible or belongs to another cycle.
+  useEffect(() => {
+    if (resumeAppliedRef.current) return;
+    if (!token || unlockAll) { resumeAppliedRef.current = true; return; } // guests don't resume from server
+    if (!contentLoaded || !progressLoaded || steps.length === 0) return;
+    resumeAppliedRef.current = true;
+    const resume = pendingResume;
+    if (!resume) return;
+    if (resume.cycleId && activeCycleId && resume.cycleId !== activeCycleId) return; // cross-cycle guard
+    const idx = steps.findIndex((s) => s.module.id === resume.moduleId);
+    if (idx < 0) return; // saved module unavailable → keep default first-incomplete
+    const targetModule = findModule(resume.moduleId);
+    const mastery = effectiveBloomMasteryByModule[resume.moduleId] ?? 0;
+    const targetPages = lessonPagesFor(targetModule, mastery);
+    const pageIdx = resume.stage ? targetPages.findIndex((p) => p.kind === resume.stage) : 0;
+    goToStep(idx, pageIdx >= 0 ? pageIdx : 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, unlockAll, contentLoaded, progressLoaded, steps, pendingResume, activeCycleId, findModule, effectiveBloomMasteryByModule, goToStep]);
 
   // Server-authoritative Post-Test release decision, made AFTER the final
   // module-completion write has committed. The local "required path complete"
@@ -1418,44 +1531,56 @@ export default function PatternsLearnPage(): JSX.Element {
                       error={theoryErrors[activeModule.id] ?? null}
                     />
                   ) : null}
-                  {currentPage.kind === 'practical' && activeModule.practicalExam ? (
+                  {currentPage.kind === 'practical' && activeModule.practicalExam && studioPracticalConfig(activeModule) ? (
                     <PracticalExamBlock
                       moduleId={activeModule.id}
                       exam={activeModule.practicalExam}
                       isPassed={isActiveComplete || isPracticalDone}
-                      answer={practicalAnswers[activeModule.id] || ''}
-                      saving={!!practicalSaving[activeModule.id]}
+                      targetPatternSlug={studioPracticalConfig(activeModule)!.targetPatternSlug}
+                      starterCode={studioPracticalConfig(activeModule)!.starterCode}
+                      completing={!!practicalSaving[activeModule.id]}
                       error={practicalErrors[activeModule.id] ?? null}
-                      onAnswerChange={(next) => {
-                        setPracticalErrors((prev) => ({ ...prev, [activeModule.id]: null }));
-                        setPracticalAnswers((prev) => ({ ...prev, [activeModule.id]: next }));
+                      proceedLabel={requiredModuleIds.every((id) => completedIds.has(id)) ? 'Proceed to Post-Test' : 'Proceed to Next Module'}
+                      onProceed={async () => {
+                        // Decide where to go from committed, cycle-scoped
+                        // eligibility, then release the completed module.
+                        const dest = await resolvePostTestDestination();
+                        setCompletedModulePendingExitId(null);
+                        if (dest === 'post-test') {
+                          navigate('/post-test');
+                        } else if (dest === 'dashboard') {
+                          navigate('/intern-dashboard');
+                        } else {
+                          setPageIndex(0); // next module has shifted into place
+                        }
                       }}
-                      onSave={async () => {
-                        const answerText = (practicalAnswers[activeModule.id] || '').trim();
+                      onDetected={async () => {
                         const practicalExam = activeModule.practicalExam;
                         if (!practicalExam) return;
-                        if (!answerText) {
-                          setPracticalErrors((prev) => ({
-                            ...prev,
-                            [activeModule.id]: 'Paste the practical answer or code output before saving.',
-                          }));
-                          return;
-                        }
+                        // Idempotent: ignore repeat detections / double-fires.
+                        if (practicalSaving[activeModule.id] || isPracticalDone || isActiveComplete) return;
+                        const cfg = studioPracticalConfig(activeModule);
                         setPracticalErrors((prev) => ({ ...prev, [activeModule.id]: null }));
                         setPracticalSaving((prev) => ({ ...prev, [activeModule.id]: true }));
                         try {
-                          await saveLearningAssessment({
-                            assessmentType: 'practical',
-                            sessionId: lmsSessionId,
-                            answers: [{
-                              moduleId: activeModule.id,
-                              questionIndex: 0,
-                              selectedIndex: -1,
-                              responseText: answerText,
-                              questionTaxonomy: practicalExam.taxonomy || 'applying',
-                              questionKind: 'practical',
-                            }],
-                          });
+                          // Record the practical as passed-by-detection (analytics).
+                          if (token && !unlockAll) {
+                            await saveLearningAssessment({
+                              assessmentType: 'practical',
+                              sessionId: lmsSessionId,
+                              answers: [{
+                                moduleId: activeModule.id,
+                                questionIndex: 0,
+                                selectedIndex: -1,
+                                responseText: `studio-detected:${cfg?.targetPatternSlug ?? practicalExam.patternSlug}`,
+                                questionTaxonomy: practicalExam.taxonomy || 'applying',
+                                questionKind: 'practical',
+                              }],
+                            });
+                          }
+                          // Detection = module complete. Mark complete + persist,
+                          // then let the next module open (completed modules drop
+                          // out of `steps`, shifting the next one into view).
                           const nextTheoryPassedIds = new Set(theoryPassedIds).add(activeModule.id);
                           const nextCompletedIds = new Set(completedIds).add(activeModule.id);
                           const nextBloomMasteryByModule = { ...effectiveBloomMasteryByModule, [activeModule.id]: 6 };
@@ -1464,22 +1589,15 @@ export default function PatternsLearnPage(): JSX.Element {
                           setCompletedIds(nextCompletedIds);
                           setBloomMasteryByModule(nextBloomMasteryByModule);
                           await persistLearningProgress(nextCompletedIds, nextTheoryPassedIds, nextBloomMasteryByModule);
-                          // Server-authoritative release: decide from committed,
-                          // cycle-scoped eligibility (not the local required-set),
-                          // so completing the final required practical reliably
-                          // opens the paired Post-Test and never strands the learner.
-                          const dest = await resolvePostTestDestination();
-                          if (dest === 'post-test') {
-                            navigate('/post-test');
-                          } else if (dest === 'dashboard') {
-                            navigate('/intern-dashboard');
-                          } else {
-                            setPageIndex(0);
-                          }
+                          // Don't auto-navigate. Keep the just-completed module
+                          // on screen (pendingExit) so we can show the
+                          // "module completed" confirmation + a Proceed button;
+                          // the learner advances explicitly.
+                          setCompletedModulePendingExitId(activeModule.id);
                         } catch (err) {
                           setPracticalErrors((prev) => ({
                             ...prev,
-                            [activeModule.id]: err instanceof Error ? err.message : 'Could not save practical answer.',
+                            [activeModule.id]: err instanceof Error ? err.message : 'Could not record the practical result.',
                           }));
                         } finally {
                           setPracticalSaving((prev) => ({ ...prev, [activeModule.id]: false }));

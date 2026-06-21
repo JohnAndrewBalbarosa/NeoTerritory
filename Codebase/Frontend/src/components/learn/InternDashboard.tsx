@@ -183,6 +183,17 @@ export default function InternDashboard(): JSX.Element {
   ) ?? null;
   const nextModuleNumber = nextModule ? modules.findIndex((module) => module.id === nextModule.id) + 1 : 0;
 
+  // Resume hint for "Continue Learning": where the learner last stopped, only
+  // when that module still exists and isn't already completed.
+  const STAGE_LABEL: Record<string, string> = { lesson: 'Lesson', theoretical: 'Conceptual Assessment', practical: 'Practical Assessment' };
+  const resume = progress?.resume ?? null;
+  const resumeModule = resume && !completedSet.has(resume.moduleId)
+    ? modules.find((m) => m.id === resume.moduleId) ?? null
+    : null;
+  const resumeLabel = resumeModule
+    ? `Resume ${resumeModule.title}${resume?.stage ? ` — ${STAGE_LABEL[resume.stage] ?? resume.stage}` : ''}`
+    : null;
+
   const categoryRows = CATEGORY_META.map((meta) => {
     const inCategory = modules.filter((module) => module.category === meta.id);
     const done = inCategory.filter((module) => completedSet.has(module.id)).length;
@@ -222,9 +233,12 @@ export default function InternDashboard(): JSX.Element {
               Resume Post-Test
             </button>
           ) : (
-            <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/patterns/learn')}>
-              Continue Learning
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+              <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/patterns/learn')}>
+                Continue Learning
+              </button>
+              {resumeLabel ? <span style={styles.resumeHint}>{resumeLabel}</span> : null}
+            </div>
           )}
         </div>
       </section>
@@ -453,6 +467,10 @@ const styles: Record<string, CSSProperties> = {
     margin: '14px 0 0',
     maxWidth: 760,
     color: 'rgba(244,247,251,0.84)',
+  },
+  resumeHint: {
+    fontSize: 12,
+    color: 'rgba(244,247,251,0.7)',
   },
   badgeRow: {
     display: 'flex',
