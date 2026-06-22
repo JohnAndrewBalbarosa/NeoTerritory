@@ -3,6 +3,7 @@ import {
   BLOOM_TAXONOMIES,
   isAnswerCorrect,
   type BloomTaxonomy,
+  type ExamQuestion,
   type LearningModule,
 } from '../data/learningModules';
 
@@ -23,12 +24,13 @@ export interface PretestModuleOutcomes {
 }
 
 export function masteryLevelForBloomLevels(levels: ReadonlyArray<BloomTaxonomy>): number {
-  let highest = 0;
-  for (const level of levels) {
-    const numericLevel = BLOOM_TAXONOMIES.indexOf(level) + 1;
-    if (numericLevel > highest) highest = numericLevel;
+  const mastered = new Set(levels);
+  let highestConsecutive = 0;
+  for (const taxonomy of BLOOM_TAXONOMIES) {
+    if (!mastered.has(taxonomy)) break;
+    highestConsecutive += 1;
   }
-  return highest;
+  return highestConsecutive;
 }
 
 function toTime(value: string | undefined): number | null {
@@ -48,11 +50,31 @@ export function bloomTaxonomiesThroughLevel(level: number): BloomTaxonomy[] {
 }
 
 export function bloomMasteryFromTaxonomies(taxonomies: Iterable<BloomTaxonomy>): number {
-  let maxLevel = 0;
-  for (const taxonomy of taxonomies) {
-    maxLevel = Math.max(maxLevel, bloomLevelForTaxonomy(taxonomy));
+  return masteryLevelForBloomLevels(Array.from(taxonomies));
+}
+
+function pretestQuestionsForModule(module: LearningModule): ReadonlyArray<ExamQuestion> {
+  return module.assessmentForms?.A ?? module.theoreticalExam?.questions ?? [];
+}
+
+function questionForAnswer(module: LearningModule, answer: LearningAssessmentsResponse['answers'][number]): ExamQuestion | undefined {
+  const questions = pretestQuestionsForModule(module);
+  if (answer.questionId && module.assessmentForms?.A) {
+    const byId = module.assessmentForms.A.find((question) => question.id === answer.questionId);
+    if (byId) return byId;
   }
-  return Math.max(0, Math.min(6, maxLevel));
+  return questions[answer.questionIndex];
+}
+
+function levelGroupsForQuestions(questions: ReadonlyArray<ExamQuestion>): Array<{ taxonomy: BloomTaxonomy; questions: ExamQuestion[] }> {
+  const byTaxonomy = new Map<BloomTaxonomy, ExamQuestion>();
+  for (const question of questions) {
+    if (!question.taxonomy) continue;
+    if (!byTaxonomy.has(question.taxonomy)) byTaxonomy.set(question.taxonomy, question);
+  }
+  return BLOOM_TAXONOMIES
+    .filter((taxonomy) => byTaxonomy.has(taxonomy))
+    .map((taxonomy) => ({ taxonomy, questions: [byTaxonomy.get(taxonomy)!] }));
 }
 
 function latestFreshPretestAttempt(assessments: LearningAssessmentsResponse): number | null {
@@ -112,10 +134,15 @@ export function derivePretestModuleOutcomes(
   const perfectModuleIds: string[] = [];
 
   for (const module of modules) {
-    const questions = module.theoreticalExam?.questions ?? [];
+    const questions = pretestQuestionsForModule(module);
     if (questions.length === 0) continue;
 
     const moduleAnswers = answersByModuleId.get(module.id) ?? [];
+    const answersByQuestion = new Map<ExamQuestion, typeof moduleAnswers[number]>();
+    for (const answer of moduleAnswers) {
+      const question = questionForAnswer(module, answer);
+      if (question) answersByQuestion.set(question, answer);
+    }
     const requiredTaxonomies = new Set(
       questions
         .map((question) => question.taxonomy)
@@ -124,17 +151,22 @@ export function derivePretestModuleOutcomes(
     const masteredLevels = new Set<BloomTaxonomy>();
     let hasIncorrectAnswer = false;
 
-    for (const answer of moduleAnswers) {
-      const question = questions[answer.questionIndex];
-      if (!question) continue;
+    for (const group of levelGroupsForQuestions(questions)) {
+      const groupAnswers = group.questions.map((question) => answersByQuestion.get(question));
+      if (groupAnswers.some((answer) => !answer)) break;
 
-      const userAnswer = question.type === 'mcq' ? answer.selectedIndex : answer.responseText;
-      if (isAnswerCorrect(question, userAnswer)) {
-        const taxonomy = question.taxonomy ?? answer.questionTaxonomy;
-        if (taxonomy) masteredLevels.add(taxonomy);
-      } else {
+      const allCorrect = group.questions.every((question) => {
+        const answer = answersByQuestion.get(question);
+        if (!answer) return false;
+        const userAnswer = question.type === 'mcq' ? answer.selectedIndex : answer.responseText;
+        return isAnswerCorrect(question, userAnswer);
+      });
+      if (!allCorrect) {
         hasIncorrectAnswer = true;
+        break;
       }
+
+      masteredLevels.add(group.taxonomy);
     }
 
     const masteredBloomLevels = questions

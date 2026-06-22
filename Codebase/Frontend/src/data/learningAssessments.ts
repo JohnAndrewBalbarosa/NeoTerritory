@@ -145,6 +145,112 @@ export function buildLearningAssessmentAnswerInputs(
     });
 }
 
+export function bloomLevelForTaxonomy(taxonomy: BloomTaxonomy | undefined | null): number {
+  return taxonomy ? BLOOM_TAXONOMIES.indexOf(taxonomy) + 1 : 0;
+}
+
+function pretestLevelGroupsForModule(
+  moduleQuestions: ReadonlyArray<LearningAssessmentQuestion>,
+): Array<{ level: number; questions: LearningAssessmentQuestion[] }> {
+  const byLevel = new Map<number, LearningAssessmentQuestion>();
+  for (const question of moduleQuestions.slice().sort((a, b) => a.assessmentIndex - b.assessmentIndex)) {
+    const level = bloomLevelForTaxonomy(question.taxonomy);
+    if (level <= 0) continue;
+    if (!byLevel.has(level)) byLevel.set(level, question);
+  }
+  return Array.from(byLevel.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([level, questions]) => ({
+      level,
+      questions: [questions],
+    }));
+}
+
+function pretestQuestionsByModule(
+  questions: ReadonlyArray<LearningAssessmentQuestion>,
+): Map<string, LearningAssessmentQuestion[]> {
+  const byModule = new Map<string, LearningAssessmentQuestion[]>();
+  for (const question of questions) {
+    if (question.assessmentType !== 'pretest') continue;
+    const bucket = byModule.get(question.moduleId) ?? [];
+    bucket.push(question);
+    byModule.set(question.moduleId, bucket);
+  }
+  return byModule;
+}
+
+function isLearningAssessmentQuestionCorrect(item: LearningAssessmentQuestion, answers: Record<number, unknown>): boolean {
+  const selected = answers[item.assessmentIndex];
+  return hasLearningAssessmentAnswer(item.question, selected) && isAnswerCorrect(item.question, selected);
+}
+
+export function filterPretestStaircaseQuestions(
+  questions: ReadonlyArray<LearningAssessmentQuestion>,
+  answers: Record<number, unknown>,
+): LearningAssessmentQuestion[] {
+  const visible = new Set<number>();
+  for (const moduleQuestions of pretestQuestionsByModule(questions).values()) {
+    for (const group of pretestLevelGroupsForModule(moduleQuestions)) {
+      group.questions.forEach((question) => visible.add(question.assessmentIndex));
+      const allAnswered = group.questions.every((question) =>
+        hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex]),
+      );
+      if (!allAnswered) break;
+      if (!group.questions.every((question) => isLearningAssessmentQuestionCorrect(question, answers))) break;
+    }
+  }
+  return questions.filter((question) => visible.has(question.assessmentIndex));
+}
+
+export function pruneAnswersToQuestions<T>(
+  answers: Record<number, T>,
+  questions: ReadonlyArray<LearningAssessmentQuestion>,
+): Record<number, T> {
+  const allowed = new Set(questions.map((question) => question.assessmentIndex));
+  return Object.fromEntries(
+    Object.entries(answers)
+      .filter(([assessmentIndex]) => allowed.has(Number(assessmentIndex)))
+      .map(([assessmentIndex, answer]) => [Number(assessmentIndex), answer]),
+  );
+}
+
+export function derivePretestBloomMasteryByModule(
+  questions: ReadonlyArray<LearningAssessmentQuestion>,
+  answers: Record<number, unknown>,
+): Record<string, number> {
+  const mastery: Record<string, number> = {};
+  for (const [moduleId, moduleQuestions] of pretestQuestionsByModule(questions)) {
+    let highestConsecutiveLevel = 0;
+    let passedEveryAvailableLevel = true;
+    const groups = pretestLevelGroupsForModule(moduleQuestions);
+
+    for (const group of groups) {
+      const allAnswered = group.questions.every((question) =>
+        hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex]),
+      );
+      if (!allAnswered) {
+        passedEveryAvailableLevel = false;
+        break;
+      }
+
+      const allCorrect = group.questions.every((question) => isLearningAssessmentQuestionCorrect(question, answers));
+      if (!allCorrect) {
+        passedEveryAvailableLevel = false;
+        break;
+      }
+
+      highestConsecutiveLevel = Math.max(highestConsecutiveLevel, group.level);
+    }
+
+    if (passedEveryAvailableLevel && groups.length > 0 && highestConsecutiveLevel > 0) {
+      mastery[moduleId] = 6;
+    } else if (groups.length > 0) {
+      mastery[moduleId] = highestConsecutiveLevel;
+    }
+  }
+  return mastery;
+}
+
 export interface LearningAssessmentMeta {
   eyebrow: string;
   badge: string;
@@ -674,7 +780,7 @@ export function evaluateFoundationPretest(
   questions: ReadonlyArray<LearningAssessmentQuestion>,
   answers: Record<number, any>,
 ): FoundationPretestEvidence {
-  const mastered = new Set<BloomTaxonomy>();
+  const rawMastered = new Set<BloomTaxonomy>();
   const matchedModuleIds = new Set<string>();
   let correctCount = 0;
 
@@ -684,16 +790,21 @@ export function evaluateFoundationPretest(
     if (!isCorrect) continue;
     correctCount += 1;
     if (isFoundationTaxonomy(item.taxonomy)) {
-      mastered.add(item.taxonomy);
+      rawMastered.add(item.taxonomy);
       matchedModuleIds.add(item.moduleId);
     }
   }
 
-  const masteredTaxonomies = FOUNDATION_BYPASS_TAXONOMIES.filter((taxonomy) => mastered.has(taxonomy));
+  const masteredTaxonomies: BloomTaxonomy[] = [];
+  for (const taxonomy of FOUNDATION_BYPASS_TAXONOMIES) {
+    if (!rawMastered.has(taxonomy)) break;
+    masteredTaxonomies.push(taxonomy);
+  }
+
   return {
-    passed: FOUNDATION_BYPASS_TAXONOMIES.every((taxonomy) => mastered.has(taxonomy)),
+    passed: masteredTaxonomies.length === FOUNDATION_BYPASS_TAXONOMIES.length,
     masteredTaxonomies,
-    missingTaxonomies: FOUNDATION_BYPASS_TAXONOMIES.filter((taxonomy) => !mastered.has(taxonomy)),
+    missingTaxonomies: FOUNDATION_BYPASS_TAXONOMIES.filter((taxonomy) => !masteredTaxonomies.includes(taxonomy)),
     correctCount,
     totalCount: questions.length,
     latestAttemptId: null,
@@ -748,7 +859,10 @@ function gradeStoredAttempt(
     answersByIndex[item.assessmentIndex] =
       item.question.type === 'mcq' ? stored.selectedIndex : stored.responseText;
   }
-  return scoreLearningAssessment(assigned, answersByIndex);
+  const gradedQuestions = assigned[0]?.assessmentType === 'pretest'
+    ? filterPretestStaircaseQuestions(assigned, answersByIndex)
+    : assigned;
+  return scoreLearningAssessment(gradedQuestions, answersByIndex);
 }
 
 export function scoreStoredObjectiveAssessment(
@@ -786,8 +900,18 @@ export function scoreStoredObjectiveAssessmentForCycle(
   return gradeStoredAttempt(assigned, attempt.id, assessments.answers);
 }
 
-function isAnsweredCorrectly(answer: LearningAssessmentAnswerRaw, module: LearningModule): boolean {
-  const question = module.theoreticalExam?.questions[answer.questionIndex];
+function persistedQuestionForAnswer(answer: LearningAssessmentAnswerRaw, module: LearningModule): ExamQuestion | undefined {
+  const form = answer.assessmentType === 'posttest' || answer.assessmentType === 'posttest2' ? 'B' : 'A';
+  const formQuestions = module.assessmentForms?.[form] ?? [];
+  if (answer.questionId) {
+    const byId = formQuestions.find((question) => question.id === answer.questionId);
+    if (byId) return byId;
+  }
+  return formQuestions[answer.questionIndex] ?? module.theoreticalExam?.questions[answer.questionIndex];
+}
+
+function isStoredAnswerCorrect(answer: LearningAssessmentAnswerRaw, module: LearningModule): boolean {
+  const question = persistedQuestionForAnswer(answer, module);
   if (!question) return false;
   // identification questions might store responseText instead of selectedIndex
   const userAnswer = question.type === 'mcq' ? answer.selectedIndex : answer.responseText;
@@ -813,7 +937,7 @@ export function evaluateFoundationPretestFromAssessments(
   }
 
   const answers = assessments.answers.filter((answer) => answer.attemptId === latestAttempt.id);
-  const mastered = new Set<BloomTaxonomy>();
+  const rawMastered = new Set<BloomTaxonomy>();
   const matchedModuleIds = new Set<string>();
   let correctCount = 0;
 
@@ -823,16 +947,22 @@ export function evaluateFoundationPretestFromAssessments(
     if (!module || !isFoundationModule(module)) continue;
     const taxonomy = answer.questionTaxonomy as BloomTaxonomy | null;
     if (!isFoundationTaxonomy(taxonomy)) continue;
-    if (!isAnsweredCorrectly(answer, module)) continue;
-    mastered.add(taxonomy);
+    if (!isStoredAnswerCorrect(answer, module)) continue;
+    rawMastered.add(taxonomy);
     matchedModuleIds.add(module.id);
     correctCount += 1;
   }
 
+  const masteredTaxonomies: BloomTaxonomy[] = [];
+  for (const taxonomy of FOUNDATION_BYPASS_TAXONOMIES) {
+    if (!rawMastered.has(taxonomy)) break;
+    masteredTaxonomies.push(taxonomy);
+  }
+
   return {
-    passed: FOUNDATION_BYPASS_TAXONOMIES.every((taxonomy) => mastered.has(taxonomy)),
-    masteredTaxonomies: FOUNDATION_BYPASS_TAXONOMIES.filter((taxonomy) => mastered.has(taxonomy)),
-    missingTaxonomies: FOUNDATION_BYPASS_TAXONOMIES.filter((taxonomy) => !mastered.has(taxonomy)),
+    passed: masteredTaxonomies.length === FOUNDATION_BYPASS_TAXONOMIES.length,
+    masteredTaxonomies,
+    missingTaxonomies: FOUNDATION_BYPASS_TAXONOMIES.filter((taxonomy) => !masteredTaxonomies.includes(taxonomy)),
     correctCount,
     totalCount: answers.length,
     latestAttemptId: latestAttempt.id,

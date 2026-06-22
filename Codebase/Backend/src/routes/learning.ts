@@ -24,6 +24,7 @@ const router = express.Router();
 interface ProgressRow {
   completed_module_ids: string;
   last_unlocked_module_id: string | null;
+  tries_by_module: string | null;
   theory_passed_module_ids: string | null;
   bloom_mastery_by_module: string | null;
   skipped_module_ids: string | null;
@@ -256,6 +257,15 @@ function parseBloomMasteryByModule(raw: string | null | undefined): Record<strin
   }
 }
 
+function parseTriesByModule(raw: string | null | undefined): Record<string, number> {
+  if (!raw) return {};
+  try {
+    return sanitizeTries(JSON.parse(raw));
+  } catch {
+    return {};
+  }
+}
+
 // ── Public learning content (D92 DB-backed CMS) ────────────────────────────
 // PUBLIC (no auth): the learner page reads its content here. Returns published
 // modules plus baseline foundation modules ordered by sort_order ASC, each
@@ -315,7 +325,8 @@ router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
     }
     const row = db
       .prepare(
-        `SELECT completed_module_ids, last_unlocked_module_id, theory_passed_module_ids, bloom_mastery_by_module, skipped_module_ids
+        `SELECT completed_module_ids, last_unlocked_module_id, tries_by_module,
+                theory_passed_module_ids, bloom_mastery_by_module, skipped_module_ids
          FROM learning_progress WHERE user_id = ?`,
       )
       .get(req.user.id) as ProgressRow | undefined;
@@ -323,6 +334,7 @@ router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
     res.json({
       completedModuleIds: parseStringArrayColumn(row?.completed_module_ids),
       lastUnlockedModuleId: row?.last_unlocked_module_id ?? null,
+      triesByModule: parseTriesByModule(row?.tries_by_module),
       theoryPassedModuleIds: parseStringArrayColumn(row?.theory_passed_module_ids),
       bloomMasteryByModule: parseBloomMasteryByModule(row?.bloom_mastery_by_module),
       skippedModuleIds: parseStringArrayColumn(row?.skipped_module_ids),

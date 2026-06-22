@@ -5,11 +5,14 @@ import {
   buildFormalAssessment,
   buildObjectiveAssessment,
   computeLearningGain,
+  derivePretestBloomMasteryByModule,
   evaluateFoundationPretest,
+  filterPretestStaircaseQuestions,
   hasLearningAssessmentAnswer,
   isAnswerRevealingQuestion,
   isEligibleObjectiveQuestion,
   moduleProficiencyStatus,
+  pruneAnswersToQuestions,
   scoreLearningAssessment,
   scoreStoredObjectiveAssessment,
   scoreStoredObjectiveAssessmentForCycle,
@@ -242,6 +245,56 @@ describe('evaluateFoundationPretest', () => {
       expect(result.correctCount).toBe(persona.correctCount);
       expect(result.totalCount).toBe(3);
     }
+  });
+
+  it('keeps foundation mastery consecutive when a higher level is correct after a lower-level miss', () => {
+    const result = evaluateFoundationPretest(questions, { 0: 0, 1: 1, 2: 0 });
+    expect(result.masteredTaxonomies).toEqual(['remembering']);
+    expect(result.missingTaxonomies).toEqual(['understanding', 'applying']);
+    expect(result.passed).toBe(false);
+    expect(result.correctCount).toBe(2);
+  });
+});
+
+describe('pre-test Bloom staircase', () => {
+  function moduleQuestion(assessmentIndex: number, taxonomy: BloomTaxonomy, correctIndex = 0): LearningAssessmentQuestion {
+    return {
+      ...buildQuestion(assessmentIndex, taxonomy, correctIndex),
+      moduleId: 'module-staircase',
+      moduleTitle: 'Staircase Module',
+      questionId: `module-staircase:A${assessmentIndex + 1}`,
+      questionIndex: assessmentIndex,
+    };
+  }
+
+  const questions = [
+    moduleQuestion(0, 'remembering', 0),
+    moduleQuestion(1, 'understanding', 1),
+    moduleQuestion(2, 'applying', 0),
+  ];
+
+  it('shows the next level only after the current level is answered correctly', () => {
+    expect(filterPretestStaircaseQuestions(questions, {}).map((q) => q.assessmentIndex)).toEqual([0]);
+    expect(filterPretestStaircaseQuestions(questions, { 0: 0 }).map((q) => q.assessmentIndex)).toEqual([0, 1]);
+  });
+
+  it('stops mastery at the first failed level and prunes hidden higher answers', () => {
+    const answers = { 0: 0, 1: 0, 2: 0 };
+    const visible = filterPretestStaircaseQuestions(questions, answers);
+    expect(visible.map((q) => q.assessmentIndex)).toEqual([0, 1]);
+    expect(pruneAnswersToQuestions(answers, visible)).toEqual({ 0: 0, 1: 0 });
+    expect(derivePretestBloomMasteryByModule(questions, answers)).toEqual({
+      'module-staircase': 1,
+    });
+  });
+
+  it('records zero mastery when the first visible Bloom level fails', () => {
+    const answers = { 0: 1 };
+    const visible = filterPretestStaircaseQuestions(questions, answers);
+    expect(visible.map((q) => q.assessmentIndex)).toEqual([0]);
+    expect(derivePretestBloomMasteryByModule(questions, answers)).toEqual({
+      'module-staircase': 0,
+    });
   });
 });
 
@@ -829,5 +882,38 @@ describe('optional-module detection: cycle-scoped vs freshness-gated pre-test sc
     const score = scoreStoredObjectiveAssessmentForCycle(MODULES, assessments, 'pretest', 'cyc-1');
     expect(score).not.toBeNull();
     expect(score!.byModule[MOD].percent).toBe(100);
+  });
+
+  it('cycle-scoped pre-test scoring ignores higher-level answers after a lower-level failure', () => {
+    const items = byId.get(MOD)!.assessmentForms!.A;
+    const answers = [0, 1, 2].map((questionIndex, i) => {
+      const q = items[questionIndex];
+      if (q.type !== 'mcq') throw new Error('Expected MCQ fixture question');
+      const selectedIndex = i === 1
+        ? (q.correctIndex + 1) % 4
+        : q.correctIndex;
+      return {
+        id: 200 + i,
+        attemptId: 2,
+        assessmentType: 'pretest' as const,
+        assessmentIndex: i,
+        moduleId: MOD,
+        questionIndex,
+        questionId: q.id,
+        selectedIndex,
+        responseText: null,
+        questionTaxonomy: q.taxonomy ?? null,
+        questionKind: 'theoretical' as const,
+        sessionId: null,
+        createdAt: '2026-01-01T00:00:00Z',
+      };
+    });
+    const score = scoreStoredObjectiveAssessmentForCycle(MODULES, {
+      attempts: [{ id: 2, assessmentType: 'pretest', sessionId: null, questionCount: 3, cycleId: 'cyc-2', planId: 'p', createdAt: '2026-01-01T00:00:00Z' }],
+      answers,
+    }, 'pretest', 'cyc-2');
+    expect(score?.byModule[MOD].correct).toBe(1);
+    expect(score?.byModule[MOD].total).toBe(2);
+    expect(score?.byModule[MOD].percent).toBe(50);
   });
 });

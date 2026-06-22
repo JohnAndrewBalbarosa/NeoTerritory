@@ -277,9 +277,10 @@ describe('derivePretestModuleOutcomes', () => {
 });
 
 describe('masteryLevelForBloomLevels', () => {
-  it('collapses mastered Bloom levels to the highest level number', () => {
+  it('collapses mastered Bloom levels to the highest consecutive level number', () => {
     expect(masteryLevelForBloomLevels([])).toBe(0);
     expect(masteryLevelForBloomLevels(['remembering'])).toBe(1);
-    expect(masteryLevelForBloomLevels(['remembering', 'evaluating', 'applying'])).toBe(5);
+    expect(masteryLevelForBloomLevels(['remembering', 'evaluating', 'applying'])).toBe(1);
+    expect(masteryLevelForBloomLevels(['remembering', 'understanding', 'applying'])).toBe(3);
   });
 });

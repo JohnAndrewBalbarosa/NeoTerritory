@@ -749,6 +749,8 @@ interface Profile {
   name: ProfileName;
   preTarget: number;    // target pre-test correct fraction
   postTarget: number;   // target post-test correct fraction
+  preMasteryTarget?: number;  // strict pre-test staircase level, 0 = fail level 1
+  postMasteryTarget?: number; // strict post-test consecutive level, 6 = perfect/exempt
   maxTries: number;     // max practical tries (1 or 2 only — NEVER > 2)
   triesMode: number;    // modal value for tries (1 = almost always 1 try)
   // Expected Bloom transition (used for profiling commentary, not enforced directly)
@@ -783,6 +785,19 @@ const TESTER_PROFILES: ProfileName[] = [
 ];
 
 // ─── MODULE ASSIGNMENT ────────────────────────────────────────────────────────
+
+const PROFILE_STAIRCASE_TARGETS: Record<ProfileName, { pre: number; post: number; note: string }> = {
+  'one-take-ace': { pre: 4, post: 6, note: 'analyze->evaluate' },
+  'high-achiever': { pre: 3, post: 6, note: 'apply->evaluate' },
+  'mcq-strong': { pre: 3, post: 4, note: 'apply->analyze' },
+  'steady-improver': { pre: 2, post: 4, note: 'understand->analyze' },
+  'slow-starter': { pre: 0, post: 2, note: 'none->understand' },
+  'near-one-take': { pre: 4, post: 6, note: 'analyze->evaluate' },
+  'solid-learner': { pre: 3, post: 4, note: 'apply->analyze' },
+  'avg-improver': { pre: 2, post: 4, note: 'understand->analyze' },
+  'late-bloomer': { pre: 1, post: 3, note: 'remember->apply' },
+  'modest-gainer': { pre: 0, post: 2, note: 'none->understand' },
+};
 
 const requiredModules = MODULES.filter((m) => m.required);
 // Formal eligible required modules (exclude foundations-postrequisite from scoring)
@@ -863,80 +878,83 @@ function bloomScore(level: string): number {
   const idx = BLOOM_ORDER.indexOf(level);
   return idx >= 0 ? idx : 0;
 }
-function highestCorrectBloom(questions: QData[], answers: number[]): number {
-  let max = -1;
-  questions.forEach((q, i) => {
-    if (answers[i] === q.correctIndex) max = Math.max(max, bloomScore(q.bloomLevel));
+
+function wrongAnswer(q: QData, rngLocal: () => number): number {
+  let wrong = Math.floor(rngLocal() * 4);
+  if (wrong === q.correctIndex) wrong = (wrong + 1) % 4;
+  return wrong;
+}
+
+function firstQuestionIndexesByBloom(questions: QData[]): Array<{ index: number; level: number }> {
+  const byLevel = new Map<number, number>();
+  questions.forEach((q, index) => {
+    const level = bloomScore(q.bloomLevel);
+    if (!byLevel.has(level)) byLevel.set(level, index);
   });
-  return max; // -1 = none correct
+  return Array.from(byLevel.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([level, index]) => ({ index, level }));
+}
+
+function strictConsecutiveBloom(questions: QData[], answers: Array<number | null>): number {
+  let highest = -1;
+  for (const { index, level } of firstQuestionIndexesByBloom(questions)) {
+    if (answers[index] !== questions[index].correctIndex) break;
+    highest = level;
+  }
+  return highest; // -1 = failed the first available level
+}
+
+function generateStaircaseAnswers(
+  questions: QData[],
+  targetLevel: number,
+  rngLocal: () => number,
+  includeHiddenLevels: boolean,
+): Array<number | null> {
+  const answers: Array<number | null> = Array.from({ length: questions.length }, () => null);
+
+  for (const { index, level } of firstQuestionIndexesByBloom(questions)) {
+    const oneBasedLevel = level + 1;
+    if (targetLevel >= 6 || oneBasedLevel <= targetLevel) {
+      answers[index] = questions[index].correctIndex;
+      continue;
+    }
+    answers[index] = wrongAnswer(questions[index], rngLocal);
+    break;
+  }
+
+  if (includeHiddenLevels) {
+    questions.forEach((q, index) => {
+      if (answers[index] !== null) return;
+      const oneBasedLevel = bloomScore(q.bloomLevel) + 1;
+      answers[index] = targetLevel >= 6 || oneBasedLevel <= targetLevel
+        ? q.correctIndex
+        : wrongAnswer(q, rngLocal);
+    });
+  }
+
+  return answers;
 }
 
 // ─── ANSWER GENERATION ────────────────────────────────────────────────────────
-function generateAnswers(
-  questions: QData[],
-  targetFrac: number,
-  rngLocal: () => number,
-  bloomBias: 'low' | 'high' | 'none' = 'none',
-): number[] {
-  const n = questions.length;
-  if (n === 0) return [];
-  const targetCorrect = Math.max(1, Math.round(targetFrac * n));
-
-  const indexed = questions.map((q, i) => ({ i, bloom: bloomScore(q.bloomLevel) }));
-  if (bloomBias === 'low') {
-    indexed.sort((a, b) => a.bloom - b.bloom || rngLocal() - 0.5);
-  } else if (bloomBias === 'high') {
-    indexed.sort((a, b) => b.bloom - a.bloom || rngLocal() - 0.5);
-  } else {
-    for (let i = indexed.length - 1; i > 0; i--) {
-      const j = Math.floor(rngLocal() * (i + 1));
-      [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
-    }
-  }
-
-  const correctSet = new Set(indexed.slice(0, targetCorrect).map((x) => x.i));
-  return questions.map((q, i) => {
-    if (correctSet.has(i)) return q.correctIndex;
-    let wrong = Math.floor(rngLocal() * 4);
-    if (wrong === q.correctIndex) wrong = (wrong + 1) % 4;
-    return wrong;
-  });
-}
-
 function generatePrePostAnswers(
   qA: QData[],
   qB: QData[],
-  preTarget: number,
-  postTarget: number,
+  preMasteryTarget: number,
+  postMasteryTarget: number,
   rngLocal: () => number,
-): { preAnswers: number[]; postAnswers: number[] } {
+): { preAnswers: Array<number | null>; postAnswers: number[] } {
   if (qA.length === 0) return { preAnswers: [], postAnswers: [] };
 
-  const preAnswers = generateAnswers(qA, preTarget, rngLocal, 'low');
-  let postAnswers = generateAnswers(qB, postTarget, rngLocal, 'high');
-
-  const preCorrect = preAnswers.filter((a, i) => a === qA[i].correctIndex).length;
-  let postCorrect = postAnswers.filter((a, i) => a === qB[i].correctIndex).length;
-
-  // Guarantee post strictly > pre at module level
-  if (postCorrect <= preCorrect && qB.length > preCorrect) {
-    postAnswers = generateAnswers(qB, Math.min(1.0, postTarget + 0.15), rngLocal, 'high');
-    postCorrect = postAnswers.filter((a, i) => a === qB[i].correctIndex).length;
-  }
-  if (postCorrect <= preCorrect) {
-    const needed = preCorrect + 1 - postCorrect;
-    const byBloom = qB.map((q, i) => ({ i, bloom: bloomScore(q.bloomLevel) }))
-      .sort((a, b) => b.bloom - a.bloom);
-    let fixed = 0;
-    for (const { i } of byBloom) {
-      if (fixed >= needed) break;
-      if (postAnswers[i] !== qB[i].correctIndex) {
-        postAnswers[i] = qB[i].correctIndex;
-        fixed++;
-      }
-    }
-  }
+  const preAnswers = generateStaircaseAnswers(qA, preMasteryTarget, rngLocal, false);
+  const postAnswers = generateStaircaseAnswers(qB, postMasteryTarget, rngLocal, true)
+    .map((answer, index) => answer ?? wrongAnswer(qB[index], rngLocal));
   return { preAnswers, postAnswers };
+}
+
+function variedPreMasteryTarget(baseTarget: number, rngLocal: () => number): number {
+  if (baseTarget > 0) return baseTarget;
+  return rngLocal() < 0.7 ? 1 : 0;
 }
 
 // ─── PRACTICAL TRIES GENERATION ───────────────────────────────────────────────
@@ -1032,6 +1050,7 @@ for (let ti = 0; ti < TESTER_COUNT; ti++) {
   const username = `devcon${ti + 1}`;
   const profileName = TESTER_PROFILES[ti];
   const profile = PROFILES[profileName];
+  const staircaseTargets = PROFILE_STAIRCASE_TARGETS[profileName];
 
   const cycleId = seededUUID(`cycle-${username}-${SEED}`);
   const planId = seededUUID(`plan-${username}-${SEED}`);
@@ -1043,9 +1062,6 @@ for (let ti = 0; ti < TESTER_COUNT; ti++) {
   const assignedFormalModules = testerModules[ti];
   // All modules (for progress tracking, includes postrequisite)
   const assignedAllModules = testerAllModules[ti];
-
-  const totalQPre = assignedFormalModules.reduce((s, m) => s + m.qA.length, 0);
-  const totalQPost = assignedFormalModules.reduce((s, m) => s + m.qB.length, 0);
 
   // Timestamps: pretest earlier, posttest later in the Thursday window
   const preAttemptTime = gaussianTimestamp(-20);
@@ -1059,7 +1075,7 @@ for (let ti = 0; ti < TESTER_COUNT; ti++) {
     userId: 0,
     sessionId,
     assessmentType: 'pretest',
-    questionCount: totalQPre,
+    questionCount: 0,
     cycleId,
     planId,
     createdAt: preAttemptTime,
@@ -1069,7 +1085,7 @@ for (let ti = 0; ti < TESTER_COUNT; ti++) {
     userId: 0,
     sessionId,
     assessmentType: 'posttest',
-    questionCount: totalQPost,
+    questionCount: 0,
     cycleId,
     planId,
     createdAt: postAttemptTime,
@@ -1098,8 +1114,8 @@ for (let ti = 0; ti < TESTER_COUNT; ti++) {
     const { preAnswers: modPreAns, postAnswers: modPostAns } = generatePrePostAnswers(
       mod.qA,
       mod.qB,
-      profile.preTarget,
-      profile.postTarget,
+      variedPreMasteryTarget(staircaseTargets.pre, tRng),
+      staircaseTargets.post,
       tRng,
     );
 
@@ -1107,6 +1123,7 @@ for (let ti = 0; ti < TESTER_COUNT; ti++) {
     const preTs = gaussianTimestamp(-20);
     mod.qA.forEach((q, qi) => {
       const selected = modPreAns[qi];
+      if (selected === null || selected === undefined) return;
       const isCorrectInternal = selected === q.correctIndex ? 1 : 0;
       if (isCorrectInternal) totalPreCorrect++;
       totalPreQ++;
@@ -1154,11 +1171,11 @@ for (let ti = 0; ti < TESTER_COUNT; ti++) {
     });
 
     // Bloom mastery
-    const postBloomMax = highestCorrectBloom(mod.qB, modPostAns);
-    const preBloomMax = highestCorrectBloom(mod.qA, modPreAns);
+    const postBloomMax = strictConsecutiveBloom(mod.qB, modPostAns);
+    const preBloomMax = strictConsecutiveBloom(mod.qA, modPreAns);
     overallPreBloomMax = Math.max(overallPreBloomMax, preBloomMax);
     overallPostBloomMax = Math.max(overallPostBloomMax, postBloomMax);
-    bloomMasteryByModule[mod.moduleId] = postBloomMax >= 0 ? postBloomMax : 0;
+    bloomMasteryByModule[mod.moduleId] = 6;
 
     // Practical tries: 1 or 2 MAX, NEVER > 2
     const tries = generatePracticalTries(profile, tRng);
@@ -1204,6 +1221,9 @@ for (let ti = 0; ti < TESTER_COUNT; ti++) {
       triesByModule[m.moduleId] = 1; // 1 pass through
     }
   }
+
+  preAttempt.questionCount = preAnswersList.length;
+  postAttempt.questionCount = postAnswersList.length;
 
   const preScore = totalPreQ > 0 ? totalPreCorrect / totalPreQ : 0;
   const postScore = totalPostQ > 0 ? totalPostCorrect / totalPostQ : 0;
@@ -1523,7 +1543,7 @@ results.forEach((r) => {
 
 csvLines.push('');
 csvLines.push('## Per-profile archetype breakdown');
-csvLines.push('profile,testers,pre_target_pct,post_target_pct,max_tries,tries_mode,expected_bloom_shift');
+csvLines.push('profile,testers,pre_target_pct,post_target_pct,pre_staircase_level,post_staircase_level,max_tries,tries_mode,expected_bloom_shift');
 const profileGroups: Record<string, TesterResult[]> = {};
 results.forEach((r) => {
   if (!profileGroups[r.profileName]) profileGroups[r.profileName] = [];
@@ -1531,9 +1551,10 @@ results.forEach((r) => {
 });
 Object.entries(profileGroups).forEach(([pName, pResults]) => {
   const prof = PROFILES[pName as ProfileName];
+  const targets = PROFILE_STAIRCASE_TARGETS[pName as ProfileName];
   const tNames = pResults.map((r) => r.username).join('+');
   csvLines.push(
-    `${pName},${tNames},${(prof.preTarget * 100).toFixed(0)},${(prof.postTarget * 100).toFixed(0)},${prof.maxTries},${prof.triesMode},${prof.expectedBloomShift}`
+    `${pName},${tNames},${(prof.preTarget * 100).toFixed(0)},${(prof.postTarget * 100).toFixed(0)},${targets.pre},${targets.post},${prof.maxTries},${prof.triesMode},${targets.note}`
   );
 });
 
@@ -1554,7 +1575,7 @@ results.forEach((r) => {
   const preLabel = r.preBloom >= 0 ? BLOOM_ORDER[r.preBloom] : 'none';
   const postLabel = r.postBloom >= 0 ? BLOOM_ORDER[r.postBloom] : 'none';
   const leveled = r.postBloom > r.preBloom ? 'YES' : 'NO';
-  const note = PROFILES[r.profileName].expectedBloomShift;
+  const note = PROFILE_STAIRCASE_TARGETS[r.profileName].note;
   csvLines.push(`${r.username},${preLabel},${postLabel},${leveled},${note}`);
 });
 

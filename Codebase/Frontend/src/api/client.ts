@@ -261,6 +261,7 @@ export async function generateAiSample(
 export interface LearningProgress {
   completedModuleIds: string[];
   lastUnlockedModuleId: string | null;
+  triesByModule?: Record<string, number>;
   // D86: modules whose theoretical exam has passed. Distinct from
   // completedModuleIds so a learner mid-pattern-module (theory passed, practical
   // pending) resumes with the practical block unlocked. Optional so a stale

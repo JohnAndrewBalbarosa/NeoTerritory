@@ -61,19 +61,20 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Start["Save progress"]
+    Start["Read or save progress"]
     N0["Sanitize ids"]
-    N1["Clamp Bloom map"]
-    N2["Upsert row"]
-    N3["Mirror best effort"]
+    N1["Preserve tries"]
+    N2["Clamp Bloom map"]
+    N3["Upsert row"]
+    N4["Mirror best effort"]
     End["Return snapshot"]
-    Start --> N0 --> N1 --> N2 --> N3 --> End
+    Start --> N0 --> N1 --> N2 --> N3 --> N4 --> End
 ```
 
 ## Route Contracts
 
 - `GET /api/learning/modules` is public and returns published modules plus foundation modules, ordered by `sort_order`.
-- `GET /api/learning/progress` requires auth and returns completed module ids, last unlocked module id, theoretical-pass module ids, and `bloomMasteryByModule`.
+- `GET /api/learning/progress` requires auth and returns completed module ids, last unlocked module id, `triesByModule`, theoretical-pass module ids, and `bloomMasteryByModule`.
 - `PUT /api/learning/progress` requires auth and upserts sanitized progress for the user and optional session; `bloomMasteryByModule` values are clamped to `0..6`.
 - `PUT /api/learning/answers` requires auth and records module theoretical exam answers plus an append-only exam attempt row.
 - `GET /api/learning/assessments` requires auth and returns `attempts`, `answers`, and `courseUpdatedAt`.
@@ -102,7 +103,7 @@ Preview-only AI course plans do not call this router, do not mutate modules, and
 - Public module reads stay non-cacheable so learner content reflects admin changes promptly.
 - Assessment history includes `courseUpdatedAt` alongside attempts and answers.
 - Assessment writes are append-only and preserve old attempts for analytics.
-- Progress reads and writes preserve the per-user, per-module Bloom mastery map.
+- Progress reads and writes preserve the per-user practical tries map and per-module Bloom mastery map.
 - Freshness is enforced by comparing attempt creation time to `courseUpdatedAt` and requiring recorded answer rows, not by deleting learner data.
 - Preview-only AI course plan generation cannot reset learners.
 - Conceptual answer persistence uses update-then-insert rather than a fixed `ON CONFLICT` target so both legacy three-column and current session-aware keys are supported.

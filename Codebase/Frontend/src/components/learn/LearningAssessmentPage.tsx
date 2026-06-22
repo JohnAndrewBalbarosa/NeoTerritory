@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../logic/router';
 import {
   fetchAssessmentScope,
   fetchLearningAssessments,
   fetchLearningProgress,
   saveLearningAssessment,
+  saveLearningProgress,
   refreshGuest,
 } from '../../api/client';
 import { useAppStore } from '../../store/appState';
@@ -12,9 +13,12 @@ import { useLearningModules } from '../../data/useLearningModules';
 import {
   buildLearningAssessmentAnswerInputs,
   computeLearningGain,
+  derivePretestBloomMasteryByModule,
+  filterPretestStaircaseQuestions,
   hasLearningAssessmentAnswer,
   LEARNING_ASSESSMENT_META,
   moduleProficiencyStatus,
+  pruneAnswersToQuestions,
   PROFICIENCY_THRESHOLD,
   scoreLearningAssessment,
   scoreStoredObjectiveAssessmentForCycle,
@@ -354,6 +358,13 @@ function LearningAssessmentContent({
   const [score, setScore] = useState<AssessmentScore | null>(null);
   const [gain, setGain] = useState<LearningGain | null>(null);
 
+  const visibleQuestions = useMemo(
+    () => (assessmentType === 'pretest'
+      ? filterPretestStaircaseQuestions(questions, answers)
+      : questions),
+    [answers, assessmentType, questions],
+  );
+
   useEffect(() => {
     setAnswers({});
     setPage(0);
@@ -363,20 +374,31 @@ function LearningAssessmentContent({
     setGain(null);
   }, [assessmentType]);
 
-  const totalPages = Math.max(1, Math.ceil(questions.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(visibleQuestions.length / PAGE_SIZE));
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages - 1));
+  }, [totalPages]);
   const pageStart = page * PAGE_SIZE;
-  const pageQuestions = questions.slice(pageStart, pageStart + PAGE_SIZE);
-  const answeredCount = questions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
-  const unansweredCount = questions.length - answeredCount;
-  const progressPct = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0;
+  const pageQuestions = visibleQuestions.slice(pageStart, pageStart + PAGE_SIZE);
+  const answeredCount = visibleQuestions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
+  const unansweredCount = visibleQuestions.length - answeredCount;
+  const progressPct = visibleQuestions.length ? Math.round((answeredCount / visibleQuestions.length) * 100) : 0;
   const isLastPage = page >= totalPages - 1;
 
   const submit = async (): Promise<void> => {
+    if (assessmentType === 'pretest' && unansweredCount > 0) {
+      setError('Answer every visible pre-test question before submitting. Later Bloom levels stay hidden until the current level is passed.');
+      setPhase('review');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      const finalScore = scoreLearningAssessment(questions, answers);
-      const inputs = buildLearningAssessmentAnswerInputs(questions, answers);
+      const finalQuestions = assessmentType === 'pretest'
+        ? filterPretestStaircaseQuestions(questions, answers)
+        : questions;
+      const finalScore = scoreLearningAssessment(finalQuestions, answers);
+      const inputs = buildLearningAssessmentAnswerInputs(finalQuestions, answers);
       await saveLearningAssessment({
         assessmentType,
         sessionId: lmsSessionId,
@@ -401,6 +423,21 @@ function LearningAssessmentContent({
         // saved above; here we just flag completion and fall through to the
         // summary (phase='done'), which shows the cycle-specific result and a
         // "Continue to Dashboard" button that performs the navigation.
+        try {
+          const mastery = derivePretestBloomMasteryByModule(questions, answers);
+          const existing = await fetchLearningProgress().catch(() => null);
+          await saveLearningProgress(
+            existing?.completedModuleIds ?? [],
+            existing?.lastUnlockedModuleId ?? null,
+            existing?.triesByModule,
+            existing?.theoryPassedModuleIds,
+            lmsSessionId ?? undefined,
+            { ...(existing?.bloomMasteryByModule ?? {}), ...mastery },
+            existing?.skippedModuleIds,
+          );
+        } catch (err) {
+          console.warn('[assessment] could not persist pre-test Bloom mastery:', err);
+        }
         setPreTestCompleted(true);
       } else {
         // Learning gain is paired by CYCLE: compare against the pre-test from
@@ -506,13 +543,15 @@ function LearningAssessmentContent({
             <p className="nt-test-page__lede">
               {unansweredCount === 0
                 ? 'All questions answered. Submit when you are ready.'
-                : `${unansweredCount} question${unansweredCount === 1 ? '' : 's'} still unanswered — unanswered questions are marked incorrect.`}
+                : assessmentType === 'pretest'
+                  ? `${unansweredCount} visible question${unansweredCount === 1 ? '' : 's'} still unanswered. Complete the current Bloom level before submitting.`
+                  : `${unansweredCount} question${unansweredCount === 1 ? '' : 's'} still unanswered — unanswered questions are marked incorrect.`}
             </p>
           </header>
 
           <section className="nt-test-page__panel">
             <div className="nt-assessment__reviewgrid" aria-label="Answer review">
-              {questions.map((q, i) => {
+              {visibleQuestions.map((q, i) => {
                 const answered = hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex]);
                 return (
                   <button
@@ -535,7 +574,12 @@ function LearningAssessmentContent({
               <button type="button" className="nt-lesson-button" onClick={() => setPhase('taking')}>
                 Back to questions
               </button>
-              <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={submit} disabled={saving}>
+              <button
+                type="button"
+                className="nt-lesson-button nt-lesson-button--primary"
+                onClick={submit}
+                disabled={saving || (assessmentType === 'pretest' && unansweredCount > 0)}
+              >
                 {saving ? 'Saving…' : meta.submitLabel}
               </button>
             </div>
@@ -565,7 +609,7 @@ function LearningAssessmentContent({
             </div>
             <div className="nt-assessment__progressmeta">
               <span>Page {page + 1} of {totalPages}</span>
-              <span>{answeredCount} of {questions.length} answered</span>
+              <span>{answeredCount} of {visibleQuestions.length} answered</span>
               {unansweredCount > 0 ? <span className="nt-assessment__unanswered">{unansweredCount} unanswered</span> : null}
             </div>
           </div>
@@ -579,7 +623,7 @@ function LearningAssessmentContent({
                 return (
                   <li key={`${item.moduleId}#${item.questionIndex}`}>
                     <p className="nt-assessment__qnum">
-                      Question {number} of {questions.length}
+                      Question {number} of {visibleQuestions.length}
                       {!answered ? <span className="nt-assessment__qflag" aria-hidden="true"> · unanswered</span> : null}
                     </p>
                     <BloomQuestionRenderer
@@ -588,7 +632,14 @@ function LearningAssessmentContent({
                       showResult={false}
                       onAnswer={(val) => {
                         setError(null);
-                        setAnswers((prev) => ({ ...prev, [item.assessmentIndex]: val }));
+                        setAnswers((prev) => {
+                          const next = { ...prev, [item.assessmentIndex]: val };
+                          if (assessmentType !== 'pretest') return next;
+                          return pruneAnswersToQuestions(
+                            next,
+                            filterPretestStaircaseQuestions(questions, next),
+                          );
+                        });
                       }}
                     />
                   </li>

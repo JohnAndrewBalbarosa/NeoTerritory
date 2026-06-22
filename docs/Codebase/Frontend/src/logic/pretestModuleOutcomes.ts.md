@@ -12,8 +12,8 @@ flowchart TD
     N0["Pick fresh pre-test"]
     N1["Group answers"]
     N2["Score questions"]
-    N3["Collect mastered levels"]
-    N4["Compute ceiling"]
+    N3["Walk levels"]
+    N4["Stop at first miss"]
     N5["Mark failures"]
     N6["Mark exemptions"]
     End["Return outcomes"]
@@ -24,17 +24,18 @@ flowchart TD
 
 - Only the latest fresh pre-test attempt is considered.
 - Attempts before `courseUpdatedAt` are ignored.
-- Correct answers add that question's Bloom taxonomy to the module mastery set.
-- The numeric `bloomMasteryByModuleId` map stores the highest mastered Bloom level for each module.
-- Any incorrect answered question marks that module as failed.
-- A module is exempt only when every authored Bloom taxonomy bucket available for that module is mastered and no answered question for the module is incorrect.
+- Correct answers add that question's Bloom taxonomy only when every lower available level for that module has already passed.
+- The numeric `bloomMasteryByModuleId` map stores the highest consecutive mastered Bloom level for each module.
+- Any incorrect answered question at the current staircase level marks that module as failed and stops higher-level mastery.
+- A module is exempt only when every authored Bloom taxonomy bucket available for that module is mastered in order and no answered current-level question is incorrect.
 - Exempt modules are treated as Bloom level 6 for that user.
-- Duplicate questions in one taxonomy do not require duplicate pre-test mastery.
+- Duplicate questions in one taxonomy do not require duplicate pre-test mastery; the first authored item for that taxonomy is the gate.
 
 ## Acceptance Checks
 
 - Stale attempts do not produce mastered, failed, or exempt modules.
 - Partial module coverage can master a level without exempting the module.
-- A mastered ceiling of 5 means levels 1 through 5 can be removed from that user's module bank.
+- A mastered ceiling of 5 means levels 1 through 5 can be removed from that user's module bank; level 6 practical work remains unless the module is exempt.
+- Passing every available pre-test level promotes the module to mastery level 6 and hides it from the learner path.
 - Duplicate questions in one Bloom taxonomy still count as one mastered bucket.
 - Failed module ids stay separate from exempt module ids.
