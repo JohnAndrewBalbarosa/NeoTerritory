@@ -7,6 +7,7 @@ import {
   SurveySummary, ComplexityData, F1Metrics,
   LearningModuleDTO, LearningModulesResponse, AdminLearningModule, AdminLearningModulesResponse,
   LearningAssessmentAnswerInput, LearningAssessmentType, LearningAssessmentsResponse,
+  BloomProgressionResponse,
   AdminFeatureReleasePlan, AdminFeatureReleasePlannerFlag, AdminCoursePlan
 } from '../types/api';
 
@@ -377,6 +378,16 @@ export async function saveLearningAssessment(payload: {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
+}
+
+export async function fetchBloomProgression(): Promise<BloomProgressionResponse> {
+  return apiFetch<BloomProgressionResponse>('/api/learning/bloom-progression');
+}
+
+export async function fetchAdminBloomProgression(userId: number): Promise<BloomProgressionResponse> {
+  return apiFetch<BloomProgressionResponse>(
+    `/api/admin/learning/bloom-progression?userId=${encodeURIComponent(userId)}`,
+  );
 }
 
 export interface ActivePlanResponse {

@@ -61,7 +61,10 @@ export default function InternDashboard(): JSX.Element {
       };
     }
 
-    Promise.all([fetchLearningProgress(), fetchLearningAssessments()])
+    Promise.all([
+      fetchLearningProgress(),
+      fetchLearningAssessments(),
+    ])
       .then(([progressData, assessmentData]) => {
         if (!cancelled) {
           setProgress(progressData);

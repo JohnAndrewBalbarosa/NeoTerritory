@@ -133,6 +133,13 @@ export function buildLearningAssessmentAnswerInputs(
     .filter((question) => hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex]))
     .map((question) => {
       const answer = answers[question.assessmentIndex];
+      const correctness = isMcqQuestion(question.question)
+        ? typeof answer === 'number' && answer === question.question.correctIndex
+        : isIdentificationQuestion(question.question)
+          ? isAnswerCorrect(question.question, answer)
+          : isStudioQuestion(question.question)
+            ? null
+            : null;
       return {
         moduleId: question.moduleId,
         questionIndex: question.questionIndex,
@@ -141,6 +148,7 @@ export function buildLearningAssessmentAnswerInputs(
         responseText: serializeAssessmentResponse(question.question, answer),
         questionTaxonomy: question.taxonomy,
         questionKind: 'theoretical' as const,
+        isCorrect: correctness,
       };
     });
 }
