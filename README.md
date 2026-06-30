@@ -6,6 +6,11 @@
 **Current release:** `0.1.0 — 2026-05-12`
 <!-- VERSION BADGE END -->
 
+![F1](https://img.shields.io/badge/overall%20F1-0.870-2ea44f)
+![Complexity](https://img.shields.io/badge/time%20complexity-O(n)%20%C2%B7%20R%C2%B2%3D0.9998-blue)
+![Study](https://img.shields.io/badge/validation-50%20participants%20%C2%B7%20150%20runs-purple)
+![Reliability](https://img.shields.io/badge/Cronbach%20%CE%B1-0.93%E2%80%930.96-orange)
+
 ---
 
 ## What this is
@@ -15,6 +20,61 @@ NeoTerritory analyses class-level C++ source code, identifies design-pattern evi
 The live site exposes a learner pathway (`/learn`, `/patterns`), a studio pathway (`/student-studio`), and a research / admin surface (`/admin`). The codebase mirrors `Codebase/` 1:1 against a markdown blueprint in `docs/Codebase/` — see `CLAUDE.md` for the docs-as-source-of-truth contract.
 
 > 📘 **Looking for docs?** Read [`docs/README.md`](./docs/README.md) for the canonical map of the `docs/` folder (auth setup, deploy, security, runbooks, research, and more).
+
+---
+
+## Results
+
+Evaluated against a **50-participant study (150 analysis runs × 10 design patterns)**. The analyzer's
+detections were scored against participants' own intent labels. Full data:
+[`docs/thesis-results/`](./docs/thesis-results/) — [`results.csv`](./docs/thesis-results/results.csv),
+[interpretation](./docs/thesis-results/results-interpretation.md).
+
+**Headline:** Overall **F1 = 0.870** (precision 0.900, recall 0.842) with **O(n)** time complexity
+(R² = 0.9998, ≈ 9.6 µs per token).
+
+### Detection quality per pattern (F1)
+
+| Pattern | F1 | Precision | Recall |
+| --- | --- | --- | --- |
+| factory | 0.941 | 0.941 | 0.941 |
+| builder | 0.936 | 0.957 | 0.917 |
+| strategy_interface | 0.929 | 0.929 | 0.929 |
+| method_chaining | 0.923 | 0.947 | 0.900 |
+| decorator | 0.917 | 0.917 | 0.917 |
+| singleton | 0.883 | 0.829 | 0.944 |
+| adapter | 0.821 | 0.941 | 0.727 |
+| proxy | 0.789 | 0.938 | 0.682 |
+| virtual_proxy | 0.737 | 0.875 | 0.636 |
+| pimpl | 0.667 | 0.727 | 0.615 |
+| **Overall** | **0.870** | **0.900** | **0.842** |
+
+### Other measured surfaces
+
+| Surface | Result |
+| --- | --- |
+| Compile pass rate | 90.0% (135/150) |
+| Static-analysis pass rate | 88.0% (132/150) |
+| Unit-test pass rate | 84.2% (235/279) |
+| Internal reliability (Cronbach α) | 0.93–0.96 across 5 subscales |
+
+> **Caveat (system-dependence):** the regression *slope* (≈ 9.6 µs/token) is the algorithm's true O(n)
+> cost and transfers across machines; the *intercept* (~900 µs) is fixed per-invocation host overhead
+> (process spawn + catalog load) and will differ by environment. Read the slope as "the algorithm,"
+> the intercept as "the environment." See the note in `results.csv`.
+>
+> **Baseline comparison is still open** — see [issue #25](../../issues/25). Next step: run a
+> regex/heuristic detector on the same corpus and report side-by-side F1 in `results.csv`.
+
+---
+
+## Architecture diagrams (UML)
+
+| Use case | Class | Activity |
+| --- | --- | --- |
+| ![Use case](docs/Codebase/Diagrams/CodiNeo_UseCase.png) | ![Class](docs/Codebase/Diagrams/CodiNeo_Class.png) | ![Activity](docs/Codebase/Diagrams/CodiNeo_Activity.png) |
+
+Source (`.puml` / `.mmd`) lives in [`docs/Codebase/Diagrams/`](./docs/Codebase/Diagrams/).
 
 ---
 
