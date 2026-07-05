@@ -1,183 +1,82 @@
 # NeoTerritory
 
-> A C++ design-pattern analyzer and AI-assisted documentation generator. Built as an undergraduate thesis project (FEU Institute of Technology, in collaboration with DEVCON Luzon) and operated as a live, deployable web application.
+## Overview
 
-<!-- VERSION BADGE START -->
-**Current release:** `0.1.0 — 2026-05-12`
-<!-- VERSION BADGE END -->
+For research purposes
 
-![F1](https://img.shields.io/badge/overall%20F1-0.870-2ea44f)
-![Complexity](https://img.shields.io/badge/time%20complexity-O(n)%20%C2%B7%20R%C2%B2%3D0.9998-blue)
-![Study](https://img.shields.io/badge/validation-50%20participants%20%C2%B7%20150%20runs-purple)
-![Reliability](https://img.shields.io/badge/Cronbach%20%CE%B1-0.93%E2%80%930.96-orange)
+Repository: [JohnAndrewBalbarosa/NeoTerritory](https://github.com/JohnAndrewBalbarosa/NeoTerritory)
 
----
+## Problem and Goal
 
-## What this is
+This project should be read as a technical build: it identifies a concrete workflow or research problem, implements a working system around that problem, and documents enough evidence for another person to understand, run, and evaluate the result.
 
-NeoTerritory analyses class-level C++ source code, identifies design-pattern evidence using a **hash-based virtual structural copy** of the parse tree, and presents the findings as ranked, source-anchored explanations. An AI layer composes per-class documentation on top of the deterministic structural facts, with both layers clearly labelled so the AI output never replaces the structural ground truth.
+Primary goals:
 
-The live site exposes a learner pathway (`/learn`, `/patterns`), a studio pathway (`/student-studio`), and a research / admin surface (`/admin`). The codebase mirrors `Codebase/` 1:1 against a markdown blueprint in `docs/Codebase/` — see `CLAUDE.md` for the docs-as-source-of-truth contract.
+- Explain what the project does and who it is for.
+- Show the architecture and implementation choices.
+- Provide enough setup guidance for local review.
+- Report measured results when available.
+- Make limitations and next steps explicit instead of implying unverified impact.
 
-> 📘 **Looking for docs?** Read [`docs/README.md`](./docs/README.md) for the canonical map of the `docs/` folder (auth setup, deploy, security, runbooks, research, and more).
+## System Design
 
----
+Current documented components:
+
+- Documentation folder for architecture, requirements, or supporting notes.
+- Automated tests or validation examples.
+- Utility scripts for running, generating, or processing project data.
+
+Project tags:
+
+- To be tagged based on the final project stack.
+
+## Setup and Usage
+
+Use the commands below as the starting point for local setup. Verify environment variables, secrets, datasets, and external services before running production-like workflows.
+
+```bash
+npm install
+npm run dev
+cmake -S . -B build
+cmake --build build
+```
+
+## Evaluation Method
+
+- Validated the analyzer against a 50-participant study.
+- Scored 150 analysis runs across 10 design-pattern categories against participant intent labels.
+- Measured detection quality with precision, recall, F1, compile pass rate, static-analysis pass rate, unit-test pass rate, and internal reliability.
 
 ## Results
 
-Evaluated against a **50-participant study (150 analysis runs × 10 design patterns)**. The analyzer's
-detections were scored against participants' own intent labels. Full data:
-[`docs/thesis-results/`](./docs/thesis-results/) — [`results.csv`](./docs/thesis-results/results.csv),
-[interpretation](./docs/thesis-results/results-interpretation.md).
+- Overall F1: 0.870.
+- Overall precision: 0.900.
+- Overall recall: 0.842.
+- Validation scale: 50 participants and 150 runs.
+- Time complexity: O(n), with R^2 = 0.9998 and about 9.6 microseconds per token slope.
+- Compile pass rate: 90.0% (135/150).
+- Static-analysis pass rate: 88.0% (132/150).
+- Unit-test pass rate: 84.2% (235/279).
+- Internal reliability: Cronbach alpha 0.93-0.96 across five subscales.
 
-**Headline:** Overall **F1 = 0.870** (precision 0.900, recall 0.842) with **O(n)** time complexity
-(R² = 0.9998, ≈ 9.6 µs per token).
+## Interpretation
 
-### Detection quality per pattern (F1)
+- The analyzer has strong evidence as a deterministic source-anchored design-pattern detector for the validated pattern set.
+- The O(n) slope suggests the detection approach scales linearly with source size; fixed host overhead should be interpreted separately from algorithmic cost.
+- The current open gap is a direct baseline comparison against simpler regex or heuristic detectors on the same corpus.
 
-| Pattern | F1 | Precision | Recall |
-| --- | --- | --- | --- |
-| factory | 0.941 | 0.941 | 0.941 |
-| builder | 0.936 | 0.957 | 0.917 |
-| strategy_interface | 0.929 | 0.929 | 0.929 |
-| method_chaining | 0.923 | 0.947 | 0.900 |
-| decorator | 0.917 | 0.917 | 0.917 |
-| singleton | 0.883 | 0.829 | 0.944 |
-| adapter | 0.821 | 0.941 | 0.727 |
-| proxy | 0.789 | 0.938 | 0.682 |
-| virtual_proxy | 0.737 | 0.875 | 0.636 |
-| pimpl | 0.667 | 0.727 | 0.615 |
-| **Overall** | **0.870** | **0.900** | **0.842** |
+## Limitations
 
-### Other measured surfaces
+- Results should only be treated as validated when this README includes the dataset, sample size, metric definition, and reproduction steps.
+- Any AI-generated, OCR-based, scraped, or heuristic output requires manual review before being used as ground truth.
+- Environment-dependent measurements such as latency, memory use, browser behavior, and API reliability should be re-measured on the target machine.
 
-| Surface | Result |
-| --- | --- |
-| Compile pass rate | 90.0% (135/150) |
-| Static-analysis pass rate | 88.0% (132/150) |
-| Unit-test pass rate | 84.2% (235/279) |
-| Internal reliability (Cronbach α) | 0.93–0.96 across 5 subscales |
+## Recommendations and Future Work
 
-> **Caveat (system-dependence):** the regression *slope* (≈ 9.6 µs/token) is the algorithm's true O(n)
-> cost and transfers across machines; the *intercept* (~900 µs) is fixed per-invocation host overhead
-> (process spawn + catalog load) and will differ by environment. Read the slope as "the algorithm,"
-> the intercept as "the environment." See the note in `results.csv`.
->
-> **Baseline comparison is still open** — see [issue #25](../../issues/25). Next step: run a
-> regex/heuristic detector on the same corpus and report side-by-side F1 in `results.csv`.
+- Run and publish a baseline detector comparison using the same participant corpus.
+- Expand the validation set beyond class-level C++ examples.
+- Track per-pattern regressions in CI before changing detection rules.
 
----
+## Documentation Standard
 
-## Architecture diagrams (UML)
-
-| Use case | Class | Activity |
-| --- | --- | --- |
-| ![Use case](docs/Codebase/Diagrams/CodiNeo_UseCase.png) | ![Class](docs/Codebase/Diagrams/CodiNeo_Class.png) | ![Activity](docs/Codebase/Diagrams/CodiNeo_Activity.png) |
-
-Source (`.puml` / `.mmd`) lives in [`docs/Codebase/Diagrams/`](./docs/Codebase/Diagrams/).
-
----
-
-## Quick start
-
-```bash
-# Clone
-git clone https://github.com/JohnAndrewBalbarosa/NeoTerritory.git
-cd NeoTerritory
-
-# Mode A — hot reload (Vite HMR + tsx watch, no Docker)
-./start.sh --local
-
-# Mode B — Docker (neoterritory:latest on :3001, the default)
-./scripts/rebuild.sh
-```
-
-Full rebuild decision matrix lives in `CLAUDE.md` (sections "Rebuild Decision Matrix" and "What to run, by what changed"). Per-component scripts:
-
-| Script | Builds |
-|---|---|
-| `ops/bash/rebuild/microservice.sh` | C++ binary via cmake |
-| `ops/bash/rebuild/frontend.sh` | Vite bundle → `Codebase/Frontend/dist/` |
-| `ops/bash/rebuild/backend.sh` | Backend tsc → `Codebase/Backend/dist/` |
-| `ops/bash/rebuild/docker.sh` | `neoterritory:latest` image + container restart |
-
----
-
-## Architecture (one-screen overview)
-
-```
-Codebase/
-├── Microservice/        C++ analyzer — parse tree, virtual tree, pattern catalog (JSON)
-├── Backend/             Node.js + Express — AI explanation, sessions, REST surface
-├── Frontend/            React + Vite — marketing site, /student-studio, /admin
-└── Infrastructure/      Docker, session orchestration, deploy plumbing
-```
-
-Five-stage analysis pipeline (described in detail on the live `/mechanics` page and in `docs/Codebase/Microservice/`):
-
-1. **Lexical tagging** — every token assigned a category from `lexeme_categories.json`.
-2. **Virtual + actual parse tree** — actual tree is immutable; virtual is the working copy.
-3. **Per-class cross-referencing** — reverse index from class → function bodies that touch it.
-4. **Virtual-only inspection** — one detector reads JSON pattern definitions and inspects the virtual tree.
-5. **Pre-templated pattern matching** — patterns live as JSON files in `pattern_catalog/<family>/`. New pattern = drop a JSON, no recompile.
-
-For the markdown blueprint of every file, see `docs/Codebase/`. For design decisions that survive across sessions, see `docs/Codebase/DESIGN_DECISIONS.md`.
-
----
-
-## Latest release
-
-<!-- LATEST RELEASE START -->
-
-## 0.1.0 — 2026-05-12
-
-The first labelled release. Captures 403 commits of feature work, fixes, refactors, and documentation. Future releases are generated from Conventional Commit subjects by `scripts/release.mjs`.
-
-See [`CHANGELOG.md`](./CHANGELOG.md) for the full breakdown.
-
-<!-- LATEST RELEASE END -->
-
-The on-site `/docs` page surfaces the same content with a "Download as PDF" button per release.
-
----
-
-## Releasing
-
-Releases use a hybrid SemVer + date label (e.g. `0.1.0 — 2026-05-12`). The root `VERSION` file is the single source of truth.
-
-```bash
-node scripts/release.mjs --dry-run    # preview the next bump
-node scripts/release.mjs              # bump VERSION, regenerate CHANGELOG.md + updates.json, tag
-git push --follow-tags
-```
-
-The bump is inferred from commit types since the latest `v*` tag:
-
-| Commit type seen | Bump |
-|---|---|
-| `feat!`, `fix!`, `refactor!`, or `BREAKING CHANGE` | major |
-| any `feat:` | minor |
-| only `fix:`, `refactor:`, `docs:`, `chore:`, `ci:`, `test:`, `perf:`, `style:`, `build:` | patch |
-
-Override with `--bump=major|minor|patch` when policy requires it.
-
----
-
-## Contributing
-
-1. **Commits MUST follow Conventional Commits.** Format: `type(scope): subject`. Allowed types: `feat`, `fix`, `refactor`, `docs`, `chore`, `ci`, `test`, `perf`, `style`, `build`.
-2. Every prompt that produces a code or doc change ends with `git add` → `git commit` → `git push` on the current branch. See `CLAUDE.md` → "Commit + Push Cadence" for the full rule.
-3. Documentation under `docs/Codebase/` is the source of truth for `Codebase/`. If the two disagree, the docs win. Do not run `tools/generate_codebase_docs.ps1` to "fix" mismatches — that walker goes code → docs and would erase the blueprint.
-4. Agent-specific behaviour rules live in `AGENTS.md` (Codex) and `CLAUDE.md` (Claude). Read both before opening a PR.
-
----
-
-## Acknowledgements
-
-This is the thesis project of John Andrew Balbarosa, Hans Christian De Leon, and Joshua Santander, submitted to the FEU Institute of Technology under the College of Computing and Information Technology, in collaboration with the DEVCON Luzon developer community. The role-delegation page on the live site (`/about`) credits per-feature contributions.
-
----
-
-## License
-
-See `LICENSE` (to be added).
+This README follows a technical-project structure: overview, goal, system design, setup, evaluation method, results, interpretation, limitations, and recommendations. Update the Results section whenever new measurements are available so project claims stay evidence-backed.
