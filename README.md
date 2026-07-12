@@ -8,37 +8,26 @@ Repository: [JohnAndrewBalbarosa/NeoTerritory](https://github.com/JohnAndrewBalb
 
 ## Problem and Goal
 
-This project should be read as a technical build: it identifies a concrete workflow or research problem, implements a working system around that problem, and documents enough evidence for another person to understand, run, and evaluate the result.
+**Problem.** Students learning software design patterns need source-anchored feedback rather than generic AI explanations detached from actual code structure.
 
-Primary goals:
-
-- Explain what the project does and who it is for.
-- Show the architecture and implementation choices.
-- Provide enough setup guidance for local review.
-- Report measured results when available.
-- Make limitations and next steps explicit instead of implying unverified impact.
+**Goal.** Analyze C++ projects for design-pattern evidence and generate labelled, educational documentation backed by deterministic structural analysis.
 
 ## System Design
 
-Current documented components:
-
-- Documentation folder for architecture, requirements, or supporting notes.
-- Automated tests or validation examples.
-- Utility scripts for running, generating, or processing project data.
-
-Project tags:
-
-- To be tagged based on the final project stack.
+- `Codebase/Microservice/`: C++ analysis service built with CMake.
+- `Codebase/Backend/` + `Codebase/FastifyService/`: TypeScript APIs and auxiliary service.
+- `Codebase/Frontend/` + `FrontendNext/`: React/Vite and Next.js learning interfaces.
+- `docs/`, `ops/`, and scripts: architecture, evaluation, deployment, and operational tooling.
 
 ## Setup and Usage
 
-Use the commands below as the starting point for local setup. Verify environment variables, secrets, datasets, and external services before running production-like workflows.
-
 ```bash
 npm install
+npm run setup
 npm run dev
-cmake -S . -B build
-cmake --build build
+
+# Validate web packages
+npm run build
 ```
 
 ## Evaluation Method
