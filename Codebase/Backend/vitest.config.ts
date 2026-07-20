@@ -11,5 +11,11 @@ export default defineConfig({
     // Each test file gets its own module instance so any module-level
     // state (e.g. env-var snapshots) does not leak across files.
     isolate: true,
+    // Seed-heavy suites (e.g. projectLearningOrchestration, coursePlannerService,
+    // adminLearningInterns) run initDb in beforeAll, which seeds ~40 learning
+    // modules. Under full-parallel load this can exceed the 10s default and flake
+    // with "Hook timed out". Raise the hook + test ceilings to absorb that.
+    hookTimeout: 30000,
+    testTimeout: 30000,
   },
 });
