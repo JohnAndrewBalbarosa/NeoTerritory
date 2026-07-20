@@ -272,6 +272,7 @@ export interface LearningAssessmentAnswerInput {
   responseText?: string | null;
   questionTaxonomy?: BloomTaxonomy | null;
   questionKind?: 'theoretical' | 'practical';
+  isCorrect?: boolean | null;
 }
 
 export interface LearningAssessmentAttemptRaw {
@@ -307,6 +308,18 @@ export interface LearningAssessmentsResponse {
   attempts: LearningAssessmentAttemptRaw[];
   answers: LearningAssessmentAnswerRaw[];
   courseUpdatedAt?: string;
+}
+
+export interface BloomProgressionEntry {
+  moduleId: string;
+  cycleId: string;
+  preHighest: { name: string; rank: number } | null;
+  postHighest: { name: string; rank: number } | null;
+  leveledUp: boolean;
+}
+
+export interface BloomProgressionResponse {
+  progression: BloomProgressionEntry[];
 }
 
 // ── Learning CMS (D92) ────────────────────────────────────────────────────

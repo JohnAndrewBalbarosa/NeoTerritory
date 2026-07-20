@@ -40,6 +40,7 @@ import {
 import { aggregateQuestionResults, type RawResultRow } from '../services/learningQuestionStats';
 import { generateCoursePlan } from '../services/coursePlannerService';
 import { probeProviderReachability, type Provider } from '../services/aiDocumentationService';
+import { computeBloomProgression, type ProgressionAttemptRow, type ProgressionAnswerRow } from './learning';
 
 // Pre-hashed bcrypt of the log-delete password. Override via LOG_DELETE_HASH env var.
 const LOG_DELETE_HASH = process.env.LOG_DELETE_HASH
@@ -3083,6 +3084,38 @@ router.delete('/pattern-groups/:id', (req: Request, res: Response, next: NextFun
     bumpCatalogEpoch();
     res.json({ removed: info.changes });
   } catch (err) { next(err); }
+});
+
+// GET /api/admin/learning/bloom-progression?userId=<id>
+// Per-learner Bloom-level progression for the PM/instructor view. Reuses the
+// learner route's pure computeBloomProgression on the TARGET user's stored,
+// client-graded (is_correct = 1) formal assessment answers, paired by cycle_id.
+router.get('/learning/bloom-progression', (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const userId = typeof req.query.userId === 'string' ? Number(req.query.userId) : NaN;
+    if (!Number.isInteger(userId) || userId <= 0) {
+      res.status(400).json({ error: 'userId required' });
+      return;
+    }
+    const attempts = db.prepare(`
+      SELECT id, cycle_id, assessment_type
+      FROM learning_assessment_attempts
+      WHERE user_id = ? AND cycle_id IS NOT NULL
+      ORDER BY created_at ASC, id ASC
+    `).all(userId) as ProgressionAttemptRow[];
+    const answers = db.prepare(`
+      SELECT a.cycle_id, ans.module_id, ans.assessment_type,
+             ans.question_taxonomy, ans.is_correct
+      FROM learning_assessment_answers ans
+      JOIN learning_assessment_attempts a ON ans.attempt_id = a.id
+      WHERE ans.user_id = ? AND a.cycle_id IS NOT NULL AND ans.is_correct = 1
+      ORDER BY ans.created_at ASC, ans.id ASC
+    `).all(userId) as ProgressionAnswerRow[];
+    const progression = computeBloomProgression(attempts, answers);
+    res.json({ progression });
+  } catch (err) {
+    next(err);
+  }
 });
 
 export default router;
