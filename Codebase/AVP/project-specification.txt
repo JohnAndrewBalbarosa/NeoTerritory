@@ -1,0 +1,14 @@
+Develop a community project prioritization system.
+
+The system manages different community projects such as road repairs,
+health programs, disaster-relief projects, livelihood programs, and
+educational support.
+
+Project managers must be able to change how projects are prioritized
+depending on the situation.
+
+Projects may be prioritized based on urgency, available budget,
+number of affected residents, or disaster risk.
+
+The prioritization method should be interchangeable without changing
+the main project-management logic.
