@@ -4,14 +4,15 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { ROOT, currentState } from './config.mjs';
 import { prepare } from './prepare.mjs';
-import { verifyFilm } from './verify-render.mjs';
+import { verifyFilm, filmDirectory, requestedRevision } from './verify-render.mjs';
 
 const requireVideo = createRequire(path.join(ROOT, 'Codebase/AVP/video/package.json'));
 const { bundle } = requireVideo('@remotion/bundler');
 const { selectComposition, renderMedia, renderStill } = requireVideo('@remotion/renderer');
 const { chromium } = createRequire(path.join(ROOT, 'Codebase/Frontend/package.json'))('playwright');
 const state = currentState();
-const output = path.join(state, 'film');
+const revision = requestedRevision();
+const output = filmDirectory(state, revision);
 fs.mkdirSync(output, { recursive: true });
 fs.rmSync(path.join(output, 'render-verification.json'), { force: true });
 if (!process.argv.includes('--prepared')) await prepare(state);
@@ -41,4 +42,4 @@ await renderMedia({
   timeoutInMilliseconds: 120000,
   onProgress: ({ progress }) => { const step = Math.floor(progress * 10); if (step > reported) { reported = step; console.log(`Rendering ${step * 10}%`); } },
 });
-await verifyFilm(state, Boolean(inputProps.voiceover));
+await verifyFilm(state, Boolean(inputProps.voiceover), revision);

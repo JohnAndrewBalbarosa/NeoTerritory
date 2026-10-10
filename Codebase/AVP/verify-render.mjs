@@ -12,9 +12,18 @@ export function verifyDuration(seconds) {
   // Allow less than one 30fps frame; decoded video must still contain 3480 frames.
   assert.ok(Number.isFinite(seconds) && Math.abs(seconds - 116) < 1 / 30 && seconds < 120, 'Film must be 116 seconds within sub-frame audio padding and below two minutes');
 }
-export async function verifyFilm(state = currentState(), voiceoverIncluded = null) {
+export function filmDirectory(state, revision) {
+  if (revision === undefined) return path.join(state, 'film');
+  assert.match(revision, /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,31}$/, 'Revision must be a short folder name');
+  return path.join(state, 'film', revision);
+}
+export function requestedRevision(args = process.argv) {
+  const index = args.indexOf('--revision');
+  return index === -1 ? undefined : (args[index + 1] ?? '');
+}
+export async function verifyFilm(state = currentState(), voiceoverIncluded = null, revision) {
   const { getVideoMetadata } = createRequire(path.join(ROOT, 'Codebase/AVP/video/package.json'))('@remotion/renderer');
-  const output = path.join(state, 'film');
+  const output = filmDirectory(state, revision);
   const destination = path.join(output, 'CodiNeo-AVP.mp4');
   const report = path.join(output, 'render-verification.json');
   fs.rmSync(report, { force: true });
@@ -30,4 +39,4 @@ export async function verifyFilm(state = currentState(), voiceoverIncluded = nul
   fs.writeFileSync(report, JSON.stringify({ passed: true, metadata, maxVolumeDb: maxVolume, decodedFrames: 3480, fullDecode: true, voiceoverIncluded, manualVisualReview: 'Review chapter PNGs and final MP4 before publication' }, null, 2));
   console.log(`Verified under-two-minute 1080p film: ${destination}`);
 }
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await verifyFilm();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await verifyFilm(currentState(), null, requestedRevision());
