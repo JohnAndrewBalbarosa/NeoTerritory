@@ -12,3 +12,5 @@ number of affected residents, or disaster risk.
 
 The prioritization method should be interchangeable without changing
 the main project-management logic.
+
+Project managers choose different prioritization rules at runtime. Each prioritization algorithm is interchangeable behind a common interface, and the caller selects the policy without changing the project-management workflow.

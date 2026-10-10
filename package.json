@@ -6,6 +6,7 @@
     "avp:verify": "node Codebase/AVP/cli.mjs verify",
     "avp:preflight": "node Codebase/AVP/preflight.mjs",
     "avp:serve": "node Codebase/AVP/cli.mjs serve",
+    "avp:capture": "node Codebase/AVP/cli.mjs capture",
     "test:avp": "node --test Codebase/AVP/tests/*.test.mjs",
     "setup": "node -e \"const p = process.platform; const cp = require('child_process'); const cmd = p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 setup' : 'bash start.sh setup'; cp.execSync(cmd, { stdio: 'inherit' });\"",
     "setup:full": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 setup -Mode full' : 'bash start.sh setup --mode full', { stdio: 'inherit' });\"",
@@ -19,7 +20,9 @@
     "docs:ops": "node tools/generate-ops-docs.mjs",
     "assessment:export-review": "node scripts/exportQuestionBankReview.mjs",
     "test:smoke-retry": "node --test scripts/__tests__/ci-aws-post-deploy-smoke.test.mjs",
-    "prepare": "node -e \"const cp=require('child_process');try{cp.execSync('git config core.hooksPath .githooks',{stdio:'ignore'});}catch{}\""
+    "prepare": "node -e \"const cp=require('child_process');try{cp.execSync('git config core.hooksPath .githooks',{stdio:'ignore'});}catch{}\"",
+    "avp:render": "node Codebase/AVP/render.mjs",
+    "avp:verify-render": "node Codebase/AVP/verify-render.mjs"
   },
   "dependencies": {
     "npm-check-updates": "^21.0.3"

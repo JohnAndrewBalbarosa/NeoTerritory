@@ -70,8 +70,8 @@ export async function preflight() {
     assert.deepEqual(pageErrors, [], 'Project Manager must render without uncaught browser errors');
     await page.screenshot({ path: path.join(state, 'admin-preflight.png') });
     checks.push('real 1920×1080 Project Manager UI, no mocked responses, no uncaught browser errors');
-    fs.writeFileSync(path.join(state, 'preflight-report.json'), JSON.stringify({ passed: true, checks, commercialCaptureReady: false, blockers: ['Exact project specification does not select Strategy in the unmodified fallback planner', 'Native DOCX export is not implemented'], observedAt: new Date().toISOString() }, null, 2));
-    console.log(`Preflight passed (${checks.length} checks). Commercial capture remains gated by the recommendation prerequisite.`);
+    fs.writeFileSync(path.join(state, 'preflight-report.json'), JSON.stringify({ passed: true, checks, limitations: ['Word control downloads HTML .doc, not native DOCX'], observedAt: new Date().toISOString() }, null, 2));
+    console.log(`Preflight passed (${checks.length} checks). Run avp:capture for the complete learning and export flow.`);
   } finally {
     await browser?.close();
     await runtime.stop();

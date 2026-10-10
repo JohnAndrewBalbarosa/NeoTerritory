@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { assertDemoDirectory } from './isolation.mjs';
 import { ROOT, local, currentState, runtimeEnvironment } from './config.mjs';
 
@@ -50,12 +50,29 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   try {
     if (process.argv[2] === 'reset') reset();
     else if (process.argv[2] === 'verify') { const state = currentState(); verifyAnalyzer(state); runWorker('recommend', state); }
+    else if (process.argv[2] === 'capture') {
+      const { startDemo, assertPortFree } = await import('./runtime.mjs');
+      await assertPortFree(4310); await assertPortFree(4311);
+      reset();
+      const state = currentState();
+      verifyAnalyzer(state); runWorker('recommend', state);
+      const runtime = await startDemo(state);
+      try {
+        await new Promise((resolve, reject) => {
+          const child = spawn(process.execPath, [path.join(ROOT, 'Codebase/Backend/node_modules/tsx/dist/cli.mjs'), path.join(ROOT, 'Codebase/AVP/capture.ts')], {
+            cwd: ROOT, env: { ...runtimeEnvironment(state), AVP_CAPTURE_OWNED: 'true' }, stdio: 'inherit',
+          });
+          child.once('error', reject);
+          child.once('exit', (code) => code === 0 ? resolve() : reject(new Error(`Capture failed (${code})`)));
+        });
+      } finally { await runtime.stop(); }
+    }
     else if (process.argv[2] === 'serve') {
       const { startDemo } = await import('./runtime.mjs');
       const runtime = await startDemo();
       console.log(`Isolated CodiNeo demo: ${runtime.origin}`);
       for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, async () => { await runtime.stop(); process.exit(0); });
     }
-    else throw new Error('Usage: node Codebase/AVP/cli.mjs reset|verify|serve');
+    else throw new Error('Usage: node Codebase/AVP/cli.mjs reset|verify|capture|serve');
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

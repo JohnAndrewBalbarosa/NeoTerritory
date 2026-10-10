@@ -2,9 +2,9 @@
 
 ## Purpose and boundaries
 
-Produce a repeatable, truthful product demonstration before building the under-two-minute commercial. Source footage must come from the actual product. This subsystem owns disposable demo state, verification, capture, and eventual video assembly. It does not own production authentication, learning scoring, recommendation rules, or C++ detection.
+Produce a repeatable, truthful product demonstration before building the under-two-minute commercial. Source footage must come from the actual product. This subsystem owns disposable demo state, verification, capture, and video assembly. It does not own production authentication, learning scoring, recommendation rules, or C++ detection.
 
-Read this audit first, then `Codebase/AVP/isolation.mjs`, `config.mjs`, `cli.mjs`, and `worker.ts`. `runtime.mjs` owns startup/shutdown, `frontend.mjs` configures the existing Vite host, and `preflight.mjs` verifies real authentication, authorization, analysis and browser rendering. The user's supplied commercial brief is the creative specification. Target the eventual final composition at 117 seconds; reserve at least 4 seconds for the closing brand lockup by shortening earlier segments.
+Read this audit first, then `Codebase/AVP/isolation.mjs`, `config.mjs`, `cli.mjs`, and `worker.ts`. `runtime.mjs` owns startup/shutdown, `frontend.mjs` configures the existing Vite host, and `preflight.mjs` verifies real authentication, authorization, analysis and browser rendering. The user's supplied commercial brief is the creative specification. The final composition is 116 seconds, including a six-second closing brand lockup.
 
 ## Repository audit
 
@@ -13,7 +13,7 @@ Read this audit first, then `Codebase/AVP/isolation.mjs`, `config.mjs`, `cli.mjs
 3. **Data:** `src/db/database.ts` opens SQLite using `DB_PATH`. `initDb.ts` supplies the schema and checked-in learning seed. Tables include users, learning modules/progress/attempts/answers, learning plans/modules, runs, settings and organization catalogs. Supabase supplies OAuth and optional remote mirrors; it is not the primary local runtime database.
 4. **Authentication:** Google/Supabase exchange and local password login produce application JWTs. `jwtAuth.ts` verifies bearer JWTs and revocation; `requireAdmin.ts` enforces role `admin`. The commercial labels Project Manager and Intern correspond to the existing `admin` and `user` roles. Use real local password login for dedicated demo accounts; no production bypass is necessary.
 5. **Project Manager:** `CoursePlanPanel.tsx` calls the real `/api/admin/course-plan` planner. Apply patches published module flags; this is shared course availability, not automatically an individual project assignment. Separate learning-plan and project-learning endpoints also exist. Verify their actual use in the capture rather than inventing a project-management screen.
-6. **Recommendation:** `coursePlannerService.ts` uses a configured Gemini/Anthropic provider or its existing heuristic fallback. The exact supplied Community Project Prioritization specification was evaluated in a fresh demo database. With no local AI provider, it selected foundation modules only, not Strategy. Verification deliberately fails here. Do not force a Strategy result or modify scoring for this commercial.
+6. **Recommendation:** `coursePlannerService.ts` uses a configured Gemini/Anthropic provider or its existing heuristic fallback. The exact supplied Community Project Prioritization specification was evaluated in a fresh demo database. With no local AI provider, it selected foundation modules only, not Strategy. The user subsequently approved a clarification describing runtime policies behind a common interface. With that paragraph, the unchanged planner selects Strategy and the foundation modules. No scoring rules changed.
 7. **Learning:** Actual module ID `behavioural-strategy`, title `Strategy`, with content in `learningModules.ts` and the checked-in backend seed. It has six conceptual questions (including the Studio-type interaction) and a practical task targeting `strategyinterface` / Strategy Interface. The practical asks for a small C++ implementation recognized by the real analyzer. Do not put question-bank answer keys into footage or reports.
 8. **Assessment/gates:** Formal pre/post forms, module scope, proficiency, completion and cycle rules live in the learning data/services and `LearningAssessmentPage.tsx`. Strategy must legitimately score below proficiency on the pre-test. Complete required module work and the required post-test before Studio, off-camera where appropriate. Never use `nt_learning_unlock_all` or fabricate assessment responses for AVP capture.
 9. **Analyzer:** `classDeclarationAnalysisService.ts` invokes a local C++ executable with catalog/output/source arguments. An existing macOS binary lives at `Microservice/build-macos/NeoTerritory`, which is omitted by the backend's default resolver; the AVP process supplies `NEOTERRITORY_BIN`. No rebuild was performed. The existing binary's correspondence to the latest source is not established by its presence alone.
@@ -38,39 +38,59 @@ Path guards reject arbitrary database paths, symbolic links and hard-linked file
 - [x] Implement non-destructive fresh-generation reset with two clean demo users.
 - [x] Execute the existing Strategy fixture using the real analyzer and verify source anchors.
 - [x] Execute the exact project specification through the real planner; record the actual failure to select Strategy.
-- [ ] Resolve the recommendation prerequisite through an approved clarification to the specification or a properly configured real AI provider. Never alter planner rules or fabricate responses.
+- [x] Resolve the recommendation prerequisite through an approved clarification to the specification or a properly configured real AI provider. Never alter planner rules or fabricate responses.
 - [x] Launch an owned loopback backend/frontend pair with isolated outputs and ordinary authentication.
-- [ ] Verify the project-learning assignment and formal assessment lifecycle through the real UI/APIs.
-- [ ] Add a real Playwright flow that completes required learning and post-test legitimately.
-- [ ] Capture separate project, learning, Studio, evidence and documentation clips; verify actual downloads.
-- [ ] Review all clips for private information, UI defects, loading artifacts and inaccurate claims.
-- [ ] Only after successful footage, add Remotion scenes and licensed/original audio preparation.
-- [ ] Render and inspect a final 117-second, 1920×1080 composition; verify duration, readable text, transitions and audio.
+- [x] Verify the actual shared course scope and formal assessment lifecycle through the real UI/APIs; document the absence of an automatic named individual assignment.
+- [x] Add a real Playwright flow that completes required learning and post-test legitimately.
+- [x] Capture separate project, learning, Studio, evidence and documentation clips; verify actual downloads.
+- [x] Review all clips for private information, UI defects, loading artifacts and inaccurate claims.
+- [x] Only after successful footage, add Remotion scenes and licensed/original audio preparation.
+- [x] Render and inspect a final 116-second, 1920×1080 composition; verify duration, readable text, transitions and audio.
 
-## Current commands
+## Repeatable capture and video pipeline
 
-From the repository root:
+`capture.ts` operates the actual application with Playwright. Normal login returns the token used in browser storage. All external browser requests are blocked. Only the owned runtime launched by `cli.mjs capture` can invoke capture. The command checks both ports, creates a fresh generation, verifies the actual analyzer and planner, starts services, completes the real UI workflow, and closes services even after a failed capture.
+
+The pre-test intentionally leaves Strategy below proficiency while answering the foundation material. The existing Post-Foundations conceptual checkpoint still gates lesson access and is completed through its real form. Strategy theory, analyzer practical, and formal post-test are also completed through their real forms. Only selected assessment interactions are edited into the commercial; answer-key reveals are excluded. Nothing writes artificial outcomes to the database.
+
+The project-manager course plan publishes the relevant module scope; the current UI does not automatically assign a named project to an individual. The film describes project-guided learning without inventing an individual assignment record.
+
+Video ownership is separate: `video/` holds the Remotion composition; `prepare.mjs` creates trimmed local media and original music; `render.mjs` bundles and renders the film. Generated clips, screenshots, credentials, audio and renders stay ignored locally. `video/src/index.tsx` owns reusable typography, source-code animation, diagram nodes, browser framing and brand lockups. The composition targets 116 seconds, 1920×1080 at 30fps. Optional voice-over is supplied at render time and follows `narration.md`. No copyrighted stock music is included.
+
+Playwright uses a 1920×1080 viewport at device scale 2: 1920×1080 VP8 source recordings plus lossless 3840×2160 PNGs of each selected final state. The larger screenshots preserve readable text during editorial zooms. Prepared clips retain normal interaction speed and extend a clean hold to eight seconds. The composition uses the real recording for actions, then its matching lossless browser screenshot for sharper held close-ups. Static result shots switch after half a second; action shots switch after three seconds. These are screenshots of the application, never recreated UI. Slow analysis clips retain the completed result and at most one second of the preceding wait, so repeated captures cannot freeze on a loading screen.
+
+The timeline is hook 0–8s; theory 8–21s; reveal 21–29s; project workflow 29–45s; learning 45–60s; Studio 60–68s; conceptual structural diagram 68–83s; evidence 83–99s; documentation 99–110s; brand close 110–116s. `render.mjs` produces chapter review frames and renders H.264/AAC. `verify-render.mjs` checks metadata, fully decodes all 3,480 frames, and measures audio peak headroom. The video is exactly 116 seconds; AAC container padding is allowed within one 30fps frame, while the two-minute ceiling remains strict. `npm run avp:verify-render` rechecks an existing film without rendering it again. A new render clears any previous success report before starting.
 
 ```sh
-node --test Codebase/AVP/tests/isolation.test.mjs
 npm run avp:reset
 npm run avp:verify
 npm run avp:preflight
-npm run avp:serve
+npm run avp:capture
+npm run avp:render
 ```
 
-`verify` currently fails honestly when the supplied specification does not recommend Strategy. It first verifies the real golden fixture. Do not interpret this as finished footage or a production-ready AVP. Reset creates new generations and leaves old ones intact for review; `.local` is private local material.
+`avp:capture` includes its own reset; the first three commands are independently useful safety checks. Install the dedicated video package with `npm ci --prefix Codebase/AVP/video` before rendering. Existing backend/frontend dependencies and an existing supported analyzer binary are prerequisites. No C++ rebuild is invoked.
 
-`avp:preflight` owns both services, refuses occupied ports, checks ordinary admin/user login and 401/403 authorization, checks empty intern assessment history, calls the real analysis API, renders the actual Project Manager dashboard in Chromium at 1920×1080, and shuts down its services. It saves a private JSON report and screenshot. It does not bypass or complete the intern learning path. Run preflight before manually starting `avp:serve`; it deliberately will not attach to an existing service.
+`avp:preflight` owns both services, refuses occupied ports, checks ordinary admin/user login and 401/403 authorization, checks empty intern assessment history, calls the real analysis API, renders the actual Project Manager dashboard in Chromium at 1920×1080, and shuts down its services. Run on a fresh reset before capture. Do not run while `avp:serve` is active.
 
-## Verified status and pending decision
+## Accuracy and export limitations
 
-Six AVP safety tests and six integrated preflight checks passed. Existing backend planner/seed/module-validation tests passed (16 tests); existing frontend learning-assessment/cycle tests passed (64 tests). Unrelated full application suites, final capture, exports and final video are not yet verified.
-
-The exact original project specification remains in `Codebase/AVP/project-specification.txt`. A read-only planner probe with this proposed additional paragraph selected `behavioural-strategy` as the only non-foundation module, using the unchanged heuristic planner:
+The approved paragraph is in `project-specification.txt`:
 
 > Project managers choose different prioritization rules at runtime. Each prioritization algorithm is interchangeable behind a common interface, and the caller selects the policy without changing the project-management workflow.
 
-This paragraph has **not** been applied to the demo specification. The pending choice is to approve that clarification or keep the exact wording and configure the existing AI planner. Do not show a successful Strategy recommendation for the unchanged original text. The local AI provider is currently unconfigured.
+The planner remains the real heuristic fallback; AI providers are disabled in the demo. The code sample remains the existing compression fixture, illustrating the reusable Strategy structure in a different domain. The runtime's compiler runner is disabled; the real analyzer-based practical detection is used.
 
-The runtime's C++ execution runner is disabled; analyzer-based practical detection is available, but any required compile/run assessment step must be checked before final capture. Native DOCX remains an implementation discrepancy, and the final AVP must not imply native DOCX support from the current `.doc` download.
+The actual export buttons read PDF, DOCX and MD. The Word control currently downloads HTML `.doc`, not native `.docx`; commercial overlay copy must say Word or documentation export, never promise native OOXML. Markdown and HTML Word content are downloaded and checked. PDF uses the actual print popup; capture verifies its content and saves that view through Chromium’s PDF printing. The motion diagram explains observed source relationships; it must not label context/delegation as standalone analyzer-emitted pattern roles.
+
+## Verification record
+
+The final clean generation completed the real project-manager recommendation/configuration, intern pre-test, required foundation checkpoint, Strategy lesson and conceptual assessment, analyzer practical, post-test, Studio analysis, source evidence, and three documentation export paths. No assessment outcomes or API responses were mocked. The analyzer verified the unchanged existing fixture with interface/concrete evidence and traceable anchors.
+
+Eleven AVP tests pass (isolation, port ownership, manifests, slow-analysis editing, audio-padding tolerance, and pre-import worker protection). Existing backend planner/seed tests pass (13); existing frontend learning-assessment/cycle tests pass (64). The Remotion TypeScript check passes. This is targeted regression coverage, not a claim that every unrelated application suite was run. The initial six integrated preflight checks also passed.
+
+The independent review found a slow-analysis editing edge case; it was fixed with a test preserving the completed state within the final four-second analysis scene. No production or isolation boundary issue was found. Production runtime files, authentication, recommendation rules, evaluation databases and C++ source were not changed.
+
+Generated acceptance reports live alongside the private demo state: `capture/capture-success.json`, `prepared-media.json`, and `film/render-verification.json`. The film and chapter PNGs are in `film/`. Absence of a successful report means that stage is unverified. Keep full raw browser recordings private: they include the off-camera work required to complete the assessments.
+
+The delivered MP4 passed full decoding at 1920×1080, 30fps, 3,480 frames and 116.011 seconds of container duration (116 seconds of video plus AAC padding). Measured audio peak is −20.3 dBFS. Nineteen chapter frames and 29 frames sampled from the final encoded MP4 were visually reviewed; close-ups, source evidence, chapter progression and brand close were inspected. This master includes original music and no spoken narration. The timed narration script and optional voice-over input are ready for later recording.
