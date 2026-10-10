@@ -16,6 +16,8 @@ const output = filmDirectory(state, revision);
 fs.mkdirSync(output, { recursive: true });
 fs.rmSync(path.join(output, 'render-verification.json'), { force: true });
 if (!process.argv.includes('--prepared')) await prepare(state);
+// Versioned mockup artwork is source material, separate from private captures.
+fs.cpSync(path.join(ROOT, 'Codebase/AVP/video/assets'), path.join(ROOT, 'Codebase/AVP/video/public/devices'), { recursive: true });
 const inputProps = { music: true };
 const voIndex = process.argv.indexOf('--voiceover');
 if (voIndex !== -1) {

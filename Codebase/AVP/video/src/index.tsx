@@ -3,7 +3,21 @@ import { AbsoluteFill, Audio, Composition, Easing, Img, OffthreadVideo, Sequence
 
 const FPS = 30;
 export const DURATION = 116 * FPS;
-const C = { bg: '#070b10', ink: '#f1f5fa', muted: '#94a6ba', cyan: '#19d8e5', mint: '#b3ff53', line: '#213743' };
+const C = { bg: 'var(--bg)', ink: 'var(--ink)', muted: 'var(--muted)', cyan: 'var(--cyan)', mint: 'var(--mint)', line: 'var(--line)' };
+const SCENE_STARTS = [0, 240, 630, 870, 1110, 1350, 1440, 1530, 1695, 1800, 1920, 2040, 2490, 2730, 2970, 3150, 3300];
+const sceneIndex = (frame: number) => SCENE_STARTS.reduce((index, start, i) => frame >= start ? i : index, 0);
+const themeStyle = (light: boolean): CSSProperties => ({
+  '--bg': light ? '#f7f9f8' : '#070b0d',
+  '--ink': light ? '#102721' : '#f1f7f4',
+  '--muted': light ? '#506b62' : '#a1b6ae',
+  '--cyan': light ? '#00786d' : '#37dfcd',
+  '--mint': light ? '#26713e' : '#b7f766',
+  '--line': light ? '#bdd2c7' : '#29443b',
+  '--surface': light ? '#ffffffeb' : '#0d1b19ed',
+  '--soft': light ? '#e3eee7' : '#19382d',
+  '--code': light ? '#375e51' : '#afc8c0',
+  '--shadow': light ? '#345a3520' : '#0008',
+} as CSSProperties);
 const sans = 'Arial, Helvetica, sans-serif';
 const mono = 'SFMono-Regular, Menlo, Consolas, monospace';
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
@@ -37,24 +51,27 @@ const code = [
   '};',
 ];
 
-// Transform-only atmosphere keeps the long render light while giving each shot depth.
+// Scene-level contrast alternates at every cut, not just at chapter changes.
 function Backdrop() {
   const f = useCurrentFrame();
-  const x = Math.sin(f / 260) * 100;
-  const y = Math.cos(f / 310) * 65;
-  return <AbsoluteFill style={{ background: '#061718', overflow: 'hidden' }}>
-    <AbsoluteFill style={{ background: 'radial-gradient(ellipse at 70% 62%, #237a6666, transparent 60%), linear-gradient(135deg, #071019, #082a2a 58%, #0d2620)' }} />
-    <div style={{ position: 'absolute', inset: -250, background: 'radial-gradient(ellipse at 78% 30%, #61e7b25c, transparent 39%), radial-gradient(ellipse at 12% 72%, #02aabd55, transparent 42%)', transform: `translate(${x}px, ${y}px) rotate(${Math.sin(f / 400) * 8}deg)` }} />
-    <svg width="2200" height="1250" viewBox="0 0 2200 1250" style={{ position: 'absolute', left: -130, top: -90, opacity: 0.54, transform: `translate(${-x * 0.45}px, ${y * 0.5}px) rotate(${Math.sin(f / 300) * 4}deg)` }}>
-      <defs><linearGradient id="ribbon" x1="0" x2="1" y1="0" y2="1"><stop stopColor="#11ad9b" stopOpacity="0.02" /><stop offset="0.48" stopColor="#50cfac" stopOpacity="0.3" /><stop offset="1" stopColor="#bbefbd" stopOpacity="0.7" /></linearGradient></defs>
-      <path d="M-300 1130 C280 1700 790 0 1340 520 S2100 1320 2500 180" fill="none" stroke="url(#ribbon)" strokeWidth="210" />
-      <path d="M-260 1130 C280 1700 790 0 1340 520 S2100 1320 2500 180" fill="none" stroke="#87eed5" strokeOpacity="0.16" strokeWidth="2" />
+  const index = sceneIndex(f);
+  const light = index % 2 === 0;
+  const local = f - SCENE_STARTS[index];
+  const x = Math.sin(f / 190) * 95;
+  const y = Math.cos(f / 260) * 55;
+  return <AbsoluteFill style={{ background: C.bg, overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', inset: -200, background: light
+      ? 'radial-gradient(ellipse at 80% 75%, #c8ebd6aa, transparent 44%), radial-gradient(ellipse at 12% 52%, #dcefe377, transparent 40%)'
+      : 'radial-gradient(ellipse at 80% 72%, #36684655, transparent 44%), radial-gradient(ellipse at 10% 50%, #0d776a44, transparent 42%)', transform: `translate(${x}px, ${y}px)` }} />
+    <svg width="2200" height="1250" viewBox="0 0 2200 1250" style={{ position: 'absolute', left: -130, top: -30, opacity: light ? 0.52 : 0.4, transform: `translate(${-x * 0.5}px, ${y * 0.7}px) rotate(${Math.sin(f / 240) * 6}deg)` }}>
+      <defs><linearGradient id="ribbon" x1="0" x2="1" y1="0" y2="1"><stop stopColor={light ? '#eaf6ed' : '#0a2521'} stopOpacity="0" /><stop offset="0.55" stopColor={light ? '#badfc9' : '#175b45'} stopOpacity="0.6" /><stop offset="1" stopColor={light ? '#72bc94' : '#8adc76'} stopOpacity="0.8" /></linearGradient></defs>
+      <path d="M-300 1080 C280 1530 790 300 1340 680 S2100 1260 2500 380" fill="none" stroke="url(#ribbon)" strokeWidth="190" />
+      <path d="M-300 982 C280 1432 790 202 1340 582 S2100 1162 2500 282" fill="none" stroke={light ? '#8ac9a6' : '#9bdca4'} strokeOpacity="0.22" strokeWidth="2" />
     </svg>
-    <AbsoluteFill style={{ background: 'linear-gradient(180deg, #04111355, transparent 45%, #020c1377)' }} />
-    <div style={{ position: 'absolute', left: -180, right: -180, bottom: -280, height: 650, borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 25%, #61cc9f20, transparent 65%)', borderTop: '1px solid #8be3c615', transform: `translateX(${x * 0.15}px)` }} />
-    <div style={{ position: 'absolute', left: 100, right: 100, bottom: 63, height: 1, background: '#7ce8cd26' }} />
-    <div style={{ position: 'absolute', left: 100, bottom: 26, fontSize: 16, letterSpacing: 4, color: '#b1d5cd' }}>CODINEO</div>
-    <div style={{ position: 'absolute', right: 100, bottom: 26, fontFamily: mono, fontSize: 15, color: '#83b4ad' }}>C++ / DESIGN PATTERNS</div>
+    <div style={{ position: 'absolute', right: -220, top: 370, width: 850, height: 850, border: `1px solid ${light ? '#aecbb94d' : '#4d876642'}`, borderRadius: '50%', transform: `scale(${0.92 + ease(local, 0, 150) * 0.16}) translateY(${y * 0.3}px)` }} />
+    <div style={{ position: 'absolute', left: 100, right: 100, bottom: 63, height: 1, background: C.line, opacity: 0.6 }} />
+    <div style={{ position: 'absolute', left: 100, bottom: 26, fontSize: 16, letterSpacing: 4, color: C.muted }}>CODINEO</div>
+    <div style={{ position: 'absolute', right: 100, bottom: 26, fontFamily: mono, fontSize: 15, color: C.muted }}>C++ / DESIGN PATTERNS</div>
   </AbsoluteFill>;
 }
 
@@ -66,8 +83,8 @@ function KineticText({ children, delay = 0 }: { children: React.ReactNode; delay
     if (typeof child === 'string') return child.split(/(\s+)/).map((word, i) => {
       if (!word.trim()) return word;
       const n = index++;
-      const t = ease(f, delay + n * 2.4, 24);
-      return <span key={`${n}-${i}`} style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'bottom', paddingBottom: '0.08em', marginBottom: '-0.08em' }}><span style={{ display: 'inline-block', opacity: t, transform: `translateY(${(1 - t) * 112}%) rotate(${(1 - t) * 4}deg) scale(${0.94 + t * 0.06})` }}>{word}</span></span>;
+      const t = ease(f, delay + n * 3, 29);
+      return <span key={`${n}-${i}`} style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'bottom', paddingBottom: '0.08em', marginBottom: '-0.08em' }}><span style={{ display: 'inline-block', opacity: t, transform: `translate(${(1 - t) * 24}px, ${(1 - t) * 135}%) rotate(${(1 - t) * 7}deg) scale(${0.82 + t * 0.18})` }}>{word}</span></span>;
     });
     if (React.isValidElement<{ children?: React.ReactNode }>(child) && child.props.children) return React.cloneElement(child, {}, reveal(child.props.children));
     return child;
@@ -77,17 +94,23 @@ function KineticText({ children, delay = 0 }: { children: React.ReactNode; delay
 
 function ShapeWipe() {
   const f = useCurrentFrame();
-  const cuts = [630, 870, 1350, 1800, 2040, 2490, 2970, 3300];
-  const cut = cuts.find((c) => Math.abs(f - c) < 13);
+  const cut = SCENE_STARTS.slice(1).find((c) => Math.abs(f - c) < 12);
   if (cut === undefined) return null;
-  const t = (f - cut + 13) / 26;
-  return <AbsoluteFill style={{ pointerEvents: 'none', overflow: 'hidden' }}><div style={{ position: 'absolute', width: 2500, height: 2500, borderRadius: '50%', top: -710, left: interpolate(t, [0, 1], [-2700, 2200]), background: 'linear-gradient(120deg, #72e5c4, #15bdb1 55%, #073e42)', transform: 'rotate(-25deg)' }} /></AbsoluteFill>;
+  const index = SCENE_STARTS.indexOf(cut);
+  const t = (f - cut + 12) / 24;
+  const x = interpolate(t, [0, 0.5, 1], [-2800, -230, 2250], { easing: Easing.bezier(0.45, 0, 0.55, 1) });
+  const round = index % 2 === 0;
+  return <AbsoluteFill style={{ pointerEvents: 'none', overflow: 'hidden' }}>
+    <div style={{ position: 'absolute', width: 2520, height: 2520, borderRadius: round ? '50%' : 160, top: -720, left: x, background: index % 2 === 0 ? '#d5efde' : '#0c382a', transform: round ? undefined : 'rotate(-15deg)' }} />
+    <div style={{ position: 'absolute', width: 100, height: 1500, top: -200, left: x + 2510, background: '#8cdb82', transform: 'rotate(-15deg)', opacity: round ? 0 : 0.7 }} />
+  </AbsoluteFill>;
 }
 
 function Chapter({ number, children }: { number: string; children: React.ReactNode }) {
   const f = useCurrentFrame();
-  return <div style={{ position: 'absolute', top: 67, left: 100, fontSize: 18, fontWeight: 600, letterSpacing: 3.8, textTransform: 'uppercase', color: C.cyan, ...appear(f) }}>
-    <span style={{ color: C.muted, marginRight: 28 }}>{number}</span>{children}
+  return <div style={{ position: 'absolute', top: 57, left: 100, display: 'flex', alignItems: 'center', gap: 20, fontSize: 17, fontWeight: 600, letterSpacing: 3.3, textTransform: 'uppercase', color: C.cyan }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 49, height: 37, borderRadius: 30, background: 'var(--soft)', color: C.ink, letterSpacing: 0, transform: `scale(${ease(f, 0, 22)})` }}>{number}</span>
+    <span style={{ overflow: 'hidden', clipPath: `inset(0 ${(1 - ease(f, 5, 35)) * 100}% 0 0)` }}>{children}</span>
   </div>;
 }
 
@@ -98,8 +121,8 @@ function Headline({ children, size = 80, top = 118 }: { children: React.ReactNod
 function CodePanel({ subdued = false, evidence = false }: { subdued?: boolean; evidence?: boolean }) {
   const f = useCurrentFrame();
   return <div style={{ fontFamily: mono, fontSize: 22, lineHeight: 1.65, whiteSpace: 'pre', opacity: subdued ? 0.4 : 1 }}>
-    {code.map((line, i) => <div key={i} style={{ color: evidence && [0, 6, 18, 21].includes(i) ? C.mint : i % 6 === 0 ? C.cyan : '#a0b5c9', opacity: ease(f, i * 1.3, 16), background: evidence && [0, 6, 18, 21].includes(i) ? '#b3ff530e' : undefined }}>
-      <span style={{ display: 'inline-block', width: 57, color: '#38515f' }}>{'·'}</span>{line}
+    {code.map((line, i) => <div key={i} style={{ color: evidence && [0, 6, 18, 21].includes(i) ? C.mint : i % 6 === 0 ? C.cyan : 'var(--code)', opacity: ease(f, i * 1.3, 16), background: evidence && [0, 6, 18, 21].includes(i) ? 'var(--soft)' : undefined }}>
+      <span style={{ display: 'inline-block', width: 57, color: C.muted }}>{'·'}</span>{line}
     </div>)}
   </div>;
 }
@@ -109,7 +132,7 @@ function Hook() {
   const second = f >= 110;
   return <AbsoluteFill>
     <div style={{ position: 'absolute', left: 690, top: -30, transform: `perspective(1600px) rotateY(-12deg) translateY(${-f * 0.12}px)`, opacity: 0.6 }}><CodePanel subdued /></div>
-    <AbsoluteFill style={{ background: 'linear-gradient(90deg, #061718 5%, #061718bb 48%, transparent)' }} />
+    <AbsoluteFill style={{ background: 'linear-gradient(90deg, var(--bg) 5%, color-mix(in srgb, var(--bg) 87%, transparent) 48%, transparent)' }} />
     <Chapter number="00">The gap</Chapter>
     <div style={{ position: 'absolute', left: 100, top: 315, width: 1500, fontWeight: 700, letterSpacing: -5, fontSize: second ? 110 : 128, lineHeight: 1.06, ...appear(f, second ? 110 : 12) }}>
       <KineticText key={String(second)} delay={second ? 110 : 12}>{second ? <>BUT CAN YOU FIND IT<br /><span style={{ color: C.cyan }}>IN THE CODE?</span></> : <>YOU KNOW<br />THE PATTERN.</>}</KineticText>
@@ -123,16 +146,16 @@ function Theory() {
   return <AbsoluteFill>
     <Chapter number="01">From the concept to the implementation</Chapter>
     <Headline>Knowing the idea is the beginning.</Headline>
-    <div style={{ position: 'absolute', left: 100, top: 290, width: 655, height: 580, borderRadius: 25, border: `1px solid ${C.line}`, background: '#0c1820', padding: 42, ...appear(f, 10) }}>
+    <div style={{ position: 'absolute', left: 100, top: 290, width: 655, height: 580, borderRadius: 25, border: `1px solid ${C.line}`, background: 'var(--surface)', boxShadow: '0 24px 80px var(--shadow)', padding: 42, ...appear(f, 10) }}>
       <div style={{ fontFamily: mono, color: C.cyan, letterSpacing: 4, fontSize: 18 }}>THEORY / STRATEGY</div>
       <div style={{ fontSize: 42, marginTop: 43, letterSpacing: -1.2 }}>One interface.<br />Interchangeable algorithms.</div>
       <div style={{ margin: '57px auto 0', width: 330, border: `1px solid ${C.cyan}`, padding: '22px 10px', textAlign: 'center', borderRadius: 12, fontFamily: mono, fontSize: 26 }}>Strategy</div>
       <div style={{ height: 44, width: 1, background: C.cyan, margin: '0 auto' }} />
       <div style={{ display: 'flex', gap: 18 }}>
-        {['Algorithm A', 'Algorithm B'].map((text) => <div key={text} style={{ flex: 1, textAlign: 'center', padding: 23, borderRadius: 12, background: '#16303b', fontSize: 25 }}>{text}</div>)}
+        {['Algorithm A', 'Algorithm B'].map((text) => <div key={text} style={{ flex: 1, textAlign: 'center', padding: 23, borderRadius: 12, background: 'var(--soft)', fontSize: 25 }}>{text}</div>)}
       </div>
     </div>
-    <div style={{ position: 'absolute', top: 290, left: 800, width: 1020, height: 580, overflow: 'hidden', padding: 38, border: `1px solid ${C.line}`, borderRadius: 25, background: '#0a1018', ...appear(f, 24) }}>
+    <div style={{ position: 'absolute', top: 290, left: 800, width: 1020, height: 580, overflow: 'hidden', padding: 38, border: `1px solid ${C.line}`, borderRadius: 25, background: 'var(--surface)', boxShadow: '0 24px 80px var(--shadow)', ...appear(f, 24) }}>
       <div style={{ fontFamily: mono, color: C.muted, letterSpacing: 4, fontSize: 18, marginBottom: 24 }}>IMPLEMENTATION / C++</div>
       <div style={{ height: 460, overflow: 'hidden' }}><div style={{ transform: `translateY(${-Math.max(0, f - 100) * 0.8}px)` }}><CodePanel /></div></div>
     </div>
@@ -151,7 +174,7 @@ function Brand({ close = false }: { close?: boolean }) {
       <div style={{ fontWeight: 800, fontSize: 190, letterSpacing: -8, lineHeight: 1 }}><span style={{ display: 'inline-block', color: C.ink, transform: `translateX(${(1 - ease(f, 0, 35)) * -240}px)` }}>CODI</span><span style={{ display: 'inline-block', color: C.cyan, transform: `translateX(${(1 - ease(f, 0, 35)) * 240}px)` }}>NEO</span><span style={{ display: 'inline-block', color: C.mint, transform: `scale(${ease(f, 25, 20)})` }}>.</span></div>
       {close && <div style={{ fontSize: 43, letterSpacing: -0.8, lineHeight: 1.22, marginTop: 47, ...appear(f, 10) }}>FROM DESIGN-PATTERN THEORY<br />TO ACTUAL C++ IMPLEMENTATION.</div>}
       <div style={{ display: 'flex', justifyContent: 'center', gap: 28, marginTop: close ? 52 : 65 }}>
-        {['LEARN.', 'ANALYZE.', 'UNDERSTAND.', 'DOCUMENT.'].map((text, i) => <span key={text} style={{ color: i === 0 ? C.mint : C.muted, fontSize: 25, letterSpacing: 2, ...appear(f, 18 + i * 12) }}>{text}</span>)}
+        {['LEARN.', 'ANALYZE.', 'UNDERSTAND.', 'DOCUMENT.'].map((text, i) => <span key={text} style={{ color: i === 0 ? C.mint : C.muted, background: 'var(--surface)', border: `1px solid ${C.line}`, borderRadius: 40, padding: '17px 24px', fontSize: 23, letterSpacing: 2, opacity: ease(f, 18 + i * 12), transform: `translateY(${(1 - ease(f, 18 + i * 12)) * 80}px) rotate(${(1 - ease(f, 18 + i * 12)) * (i % 2 ? 8 : -8)}deg)` }}>{text}</span>)}
       </div>
     </div>
   </AbsoluteFill>;
@@ -171,27 +194,27 @@ function ScreenMedia({ clip, crop, width, height, still = false }: { clip: strin
   </div>;
 }
 
-function Footage({ clip, crop, width = 1540, left = 190, top = 290, laptop = false }: { clip: string; crop: Crop; width?: number; left?: number; top?: number; laptop?: boolean }) {
+// The mockup is studio-rendered raster artwork, with real captured pixels placed
+// in its measured display rectangle. Preserve the hardware aspect ratio.
+function Footage({ clip, crop, width = 1180, left = 370, top = 215 }: { clip: string; crop: Crop; width?: number; left?: number; top?: number; laptop?: boolean }) {
   const f = useCurrentFrame();
-  const height = width * crop[3] / crop[2];
-  const t = ease(f, 5, 36);
+  const unit = width / 1536;
+  const height = width * 1024 / 1536;
+  const t = ease(f, 3, 34);
   const direction = Number(clip.slice(0, 2)) % 2 ? 1 : -1;
-  const float = Math.sin(f / 70) * 3;
-  const push = 1 + ease(f, 40, 200) * 0.015;
-  return <div style={{ position: 'absolute', left, top, width, height: height + 108, perspective: 2200 }}>
-    <div style={{ position: 'absolute', left: '12%', right: '12%', bottom: -6, height: 34, borderRadius: '50%', background: 'radial-gradient(ellipse, #0009, transparent 72%)', transform: `scaleX(${0.85 + t * 0.15})`, opacity: t }} />
-    <div style={{ position: 'absolute', inset: 0, opacity: t, transformStyle: 'preserve-3d', transform: `translateY(${(1 - t) * 120 + float}px) rotateY(${direction * (1 - t) * 15}deg) rotateX(${(1 - t) * 9}deg) rotateZ(${direction * (1 - t) * 3}deg) scale(${(0.88 + t * 0.12) * push})` }}>
-      {!laptop && <>
-        <div style={{ position: 'absolute', width: 132, height: 98, top: height + 16, left: 'calc(50% - 66px)', background: 'linear-gradient(90deg, #1a2a2b, #75918b 44%, #334d4a 73%, #172829)', clipPath: 'polygon(26% 0, 74% 0, 86% 100%, 14% 100%)' }} />
-        <div style={{ position: 'absolute', width: 420, height: 19, top: height + 99, left: 'calc(50% - 210px)', background: 'linear-gradient(#819991, #324946 48%, #122325)', borderRadius: '55% 55% 10px 10px', border: '1px solid #829b8d55' }} />
-      </>}
-      <div style={{ position: 'absolute', left: -15, right: -15, top: -20, height: height + 59, borderRadius: 26, padding: '20px 15px 39px', background: 'linear-gradient(125deg, #b6cbc1 0%, #38514e 9%, #0d171a 28%, #29433d 75%, #8ba59a 100%)', boxShadow: '0 28px 65px #0007, inset 0 0 0 1px #bbd2c066' }}>
-        <div style={{ position: 'absolute', top: 7, left: 'calc(50% - 3px)', height: 6, width: 6, borderRadius: '50%', background: '#03080c', boxShadow: 'inset 0 0 0 2px #294348' }} />
-        <div style={{ position: 'relative', width, height, borderRadius: 9, overflow: 'hidden', outline: '3px solid #040b0d' }}><ScreenMedia clip={clip} crop={crop} width={width} height={height} /></div>
-        <div style={{ position: 'absolute', bottom: 13, left: 'calc(50% - 16px)', width: 32, height: 3, borderRadius: 5, background: '#92b3a866' }} />
-        <div style={{ position: 'absolute', top: 1, left: 25, right: 25, height: 1, background: 'linear-gradient(90deg, transparent, #ecfff5b0, transparent)' }} />
+  const push = 1 + ease(f, 40, 170) * 0.025;
+  // Expand the source crop vertically to fill the physical display without
+  // stretching the application or cutting away the selected evidence.
+  const sourceHeight = crop[2] * 630 / 1090;
+  const sourceY = Math.max(0, Math.min(1080 - sourceHeight, crop[1] + (crop[3] - sourceHeight) / 2));
+  const displayCrop: Crop = [crop[0], sourceY, crop[2], sourceHeight];
+  return <div style={{ position: 'absolute', left, top, width, height, perspective: 2100 }}>
+    <div style={{ position: 'absolute', left: '12%', right: '12%', bottom: 25, height: 26, borderRadius: '50%', background: 'radial-gradient(ellipse, #0005, transparent 70%)', opacity: t, transform: `scaleX(${0.7 + t * 0.3})` }} />
+    <div style={{ position: 'absolute', inset: 0, opacity: t, transformOrigin: '50% 55%', transform: `translate(${direction * (1 - t) * 250}px, ${(1 - t) * 100 + Math.sin(f / 55) * 4}px) rotateY(${direction * (1 - t) * 28}deg) rotateX(${(1 - t) * 9}deg) rotateZ(${direction * (1 - t) * 7}deg) scale(${(0.72 + t * 0.28) * push})` }}>
+      <Img src={staticFile('devices/laptop-studio.png')} style={{ position: 'absolute', inset: 0, width, height }} />
+      <div style={{ position: 'absolute', left: 223 * unit, top: 96 * unit, width: 1090 * unit, height: 630 * unit, overflow: 'hidden', background: '#090c10' }}>
+        <ScreenMedia clip={clip} crop={displayCrop} width={1090 * unit} height={630 * unit} />
       </div>
-      {laptop && <div style={{ position: 'absolute', left: -70, right: -70, top: height + 38, height: 48, background: 'linear-gradient(#a5b9b1, #526760 40%, #263c38 45%, #0f211f)', clipPath: 'polygon(4% 0, 96% 0, 100% 65%, 98% 95%, 2% 95%, 0 65%)', borderRadius: '0 0 28px 28px', boxShadow: '0 18px 20px #0007' }}><div style={{ width: 150, height: 8, background: '#213d35', borderRadius: '0 0 10px 10px', margin: '0 auto' }} /></div>}
     </div>
   </div>;
 }
@@ -205,27 +228,26 @@ const details: Record<string, { crop: Crop; label: string }> = {
 function ProductShot({ number, chapter, title, clip, crop, note, frameWidth = 1720 }: { number: string; chapter: string; title: React.ReactNode; clip: string; crop: Crop; note?: string; frameWidth?: number }) {
   const f = useCurrentFrame();
   const detail = details[clip];
-  const laptop = ['03_', '04_', '06_', '11_', '12_'].some((prefix) => clip.startsWith(prefix));
-  const width = detail ? 1430 : Math.min(frameWidth, laptop ? 1460 : 1540, 570 * crop[2] / crop[3]);
-  const cardWidth = clip.startsWith('10_') ? 1190 : 980;
+  const width = Math.min(frameWidth, 1180);
+  const cardWidth = clip.startsWith('10_') ? 1050 : 850;
   const cardHeight = detail ? cardWidth * detail.crop[3] / detail.crop[2] : 0;
   const t = ease(f, 65, 32);
   return <AbsoluteFill>
     <Chapter number={number}>{chapter}</Chapter>
     <Headline size={74}>{title}</Headline>
-    <Footage clip={clip} crop={crop} width={width} left={detail ? 135 : (1920 - width) / 2} top={detail ? 295 : 300} laptop={laptop} />
-    {detail && <div style={{ position: 'absolute', right: 100, top: 786, width: cardWidth, height: cardHeight + 52, borderRadius: 18, background: '#122829', border: '1px solid #8ddfbe88', boxShadow: '0 24px 48px #0009', overflow: 'hidden', opacity: t, transform: `perspective(1800px) translateY(${(1 - t) * 95 + Math.sin(f / 60) * 3}px) rotateX(${(1 - t) * -12}deg) scale(${0.93 + t * 0.07})` }}>
-      <div style={{ height: 52, display: 'flex', alignItems: 'center', gap: 13, padding: '0 24px', color: '#bcf9d3', fontSize: 16, letterSpacing: 2.5 }}><span style={{ width: 6, height: 6, background: C.mint, borderRadius: 10 }} />{detail.label}<span style={{ marginLeft: 'auto', fontSize: 12, color: '#8fbbb0', letterSpacing: 1 }}>SOURCE DETAIL</span></div>
+    <Footage clip={clip} crop={crop} width={width} left={detail ? 210 : (1920 - width) / 2} top={215} />
+    {detail && <div style={{ position: 'absolute', right: 100, top: 786, width: cardWidth, height: cardHeight + 52, borderRadius: 18, background: 'var(--surface)', border: `1px solid ${C.line}`, boxShadow: '0 24px 48px var(--shadow)', overflow: 'hidden', opacity: t, transform: `perspective(1800px) translateY(${(1 - t) * 95 + Math.sin(f / 60) * 3}px) rotateX(${(1 - t) * -12}deg) scale(${0.93 + t * 0.07})` }}>
+      <div style={{ height: 52, display: 'flex', alignItems: 'center', gap: 13, padding: '0 24px', color: C.mint, fontSize: 16, letterSpacing: 2.5 }}><span style={{ width: 6, height: 6, background: C.mint, borderRadius: 10 }} />{detail.label}<span style={{ marginLeft: 'auto', fontSize: 12, color: C.muted, letterSpacing: 1 }}>SOURCE DETAIL</span></div>
       <div style={{ position: 'relative', height: cardHeight }}><ScreenMedia clip={clip} crop={detail.crop} width={cardWidth} height={cardHeight} still /></div>
     </div>}
-    {note && <div style={{ position: 'absolute', right: 120, top: 245, fontSize: 16, color: '#b7d6d0', fontFamily: mono, ...appear(f, 28) }}>{note}</div>}
+    {note && <div style={{ position: 'absolute', right: 120, top: 245, fontSize: 16, color: C.muted, fontFamily: mono, ...appear(f, 28) }}>{note}</div>}
   </AbsoluteFill>;
 }
 
 function Node({ x, y, w = 500, title, subtitle, delay, mint = false }: { x: number; y: number; w?: number; title: string; subtitle: string; delay: number; mint?: boolean }) {
   const f = useCurrentFrame();
   const color = mint ? C.mint : C.cyan;
-  return <div style={{ position: 'absolute', left: x, top: y, width: w, height: 128, padding: '24px 28px', border: `1px solid ${color}88`, background: '#0b1b24', borderRadius: 17, boxShadow: `0 0 50px ${color}08`, ...appear(f, delay) }}>
+  return <div style={{ position: 'absolute', left: x, top: y, width: w, height: 128, padding: '24px 28px', border: `1px solid ${color}`, background: 'var(--surface)', borderRadius: 17, boxShadow: '0 12px 40px var(--shadow)', ...appear(f, delay) }}>
     <div style={{ color, fontSize: 16, letterSpacing: 2, marginBottom: 12 }}>{subtitle}</div>
     <div style={{ fontFamily: mono, fontSize: 30 }}>{title}</div>
   </div>;
@@ -265,7 +287,7 @@ function Graph() {
 export type AVPProps = { voiceover?: string; music?: boolean };
 export function AVP({ voiceover, music = true }: AVPProps) {
   const f = useCurrentFrame();
-  return <AbsoluteFill style={{ color: C.ink, fontFamily: sans, background: C.bg }}>
+  return <AbsoluteFill style={{ ...themeStyle(sceneIndex(f) % 2 === 0), color: C.ink, fontFamily: sans, background: C.bg }}>
     <Backdrop />
     <Sequence from={0} durationInFrames={240}><Hook /></Sequence>
     <Sequence from={240} durationInFrames={390}><Theory /></Sequence>
