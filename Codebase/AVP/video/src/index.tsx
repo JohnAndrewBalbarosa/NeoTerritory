@@ -4,7 +4,7 @@ import { AbsoluteFill, Audio, Composition, Easing, Img, OffthreadVideo, Sequence
 const FPS = 30;
 export const DURATION = 116 * FPS;
 const C = { bg: 'var(--bg)', ink: 'var(--ink)', muted: 'var(--muted)', cyan: 'var(--cyan)', mint: 'var(--mint)', line: 'var(--line)' };
-const SCENE_STARTS = [0, 240, 630, 870, 1110, 1350, 1440, 1530, 1695, 1800, 1920, 2040, 2490, 2730, 2970, 3150, 3300];
+const SCENE_STARTS = [0, 240, 450, 600, 840, 1080, 1170, 1260, 1425, 1530, 1650, 1770, 2040, 2280, 2520, 2700, 2850, 2940, 3030, 3120, 3210, 3300];
 const sceneIndex = (frame: number) => SCENE_STARTS.reduce((index, start, i) => frame >= start ? i : index, 0);
 const themeStyle = (light: boolean): CSSProperties => ({
   '--bg': light ? '#f7f9f8' : '#070b0d',
@@ -99,7 +99,11 @@ function ShapeWipe() {
   const index = SCENE_STARTS.indexOf(cut);
   const t = (f - cut + 12) / 24;
   const x = interpolate(t, [0, 0.5, 1], [-2800, -230, 2250], { easing: Easing.bezier(0.45, 0, 0.55, 1) });
-  const round = index % 2 === 0;
+  const round = index % 3 === 0;
+  if (index % 3 === 2) {
+    const y = interpolate(t, [0, 0.5, 1], [1200, -80, -1400]);
+    return <AbsoluteFill style={{ pointerEvents: 'none', overflow: 'hidden' }}><div style={{ position: 'absolute', left: -100, right: -100, top: y, height: 1240, background: index % 2 === 0 ? '#d5efde' : '#0c382a', borderRadius: 100, transform: 'rotate(3deg)' }} /></AbsoluteFill>;
+  }
   return <AbsoluteFill style={{ pointerEvents: 'none', overflow: 'hidden' }}>
     <div style={{ position: 'absolute', width: 2520, height: 2520, borderRadius: round ? '50%' : 160, top: -720, left: x, background: index % 2 === 0 ? '#d5efde' : '#0c382a', transform: round ? undefined : 'rotate(-15deg)' }} />
     <div style={{ position: 'absolute', width: 100, height: 1500, top: -200, left: x + 2510, background: '#8cdb82', transform: 'rotate(-15deg)', opacity: round ? 0 : 0.7 }} />
@@ -146,7 +150,7 @@ function Theory() {
   return <AbsoluteFill>
     <Chapter number="01">From the concept to the implementation</Chapter>
     <Headline centered>Knowing the idea is the beginning.</Headline>
-    <div style={{ position: 'absolute', left: 100, top: 290, width: 655, height: 580, borderRadius: 25, border: `1px solid ${C.line}`, background: 'var(--surface)', boxShadow: '0 24px 80px var(--shadow)', padding: 42, ...appear(f, 10) }}>
+    <div style={{ position: 'absolute', left: 100 + (1 - ease(f, 43, 38)) * 535, top: 290, width: 655, height: 580, borderRadius: 25, border: `1px solid ${C.line}`, background: 'var(--surface)', boxShadow: '0 24px 80px var(--shadow)', padding: 42, ...appear(f, 10) }}>
       <div style={{ fontFamily: mono, color: C.cyan, letterSpacing: 4, fontSize: 18 }}>THEORY / STRATEGY</div>
       <div style={{ fontSize: 42, marginTop: 43, letterSpacing: -1.2 }}>One interface.<br />Interchangeable algorithms.</div>
       <div style={{ margin: '57px auto 0', width: 330, border: `1px solid ${C.cyan}`, padding: '22px 10px', textAlign: 'center', borderRadius: 12, fontFamily: mono, fontSize: 26 }}>Strategy</div>
@@ -155,11 +159,11 @@ function Theory() {
         {['Algorithm A', 'Algorithm B'].map((text) => <div key={text} style={{ flex: 1, textAlign: 'center', padding: 23, borderRadius: 12, background: 'var(--soft)', fontSize: 25 }}>{text}</div>)}
       </div>
     </div>
-    <div style={{ position: 'absolute', top: 290, left: 800, width: 1020, height: 580, overflow: 'hidden', padding: 38, border: `1px solid ${C.line}`, borderRadius: 25, background: 'var(--surface)', boxShadow: '0 24px 80px var(--shadow)', ...appear(f, 24) }}>
+    <div style={{ position: 'absolute', top: 290, left: 800, width: 1020, height: 580, overflow: 'hidden', padding: 38, border: `1px solid ${C.line}`, borderRadius: 25, background: 'var(--surface)', boxShadow: '0 24px 80px var(--shadow)', opacity: ease(f, 60, 30), clipPath: `inset(0 ${(1 - ease(f, 54, 43)) * 100}% 0 0 round 25px)`, transform: `translateX(${(1 - ease(f, 54, 43)) * 100}px)` }}>
       <div style={{ fontFamily: mono, color: C.muted, letterSpacing: 4, fontSize: 18, marginBottom: 24 }}>IMPLEMENTATION / C++</div>
-      <div style={{ height: 460, overflow: 'hidden' }}><div style={{ transform: `translateY(${-Math.max(0, f - 100) * 0.8}px)` }}><CodePanel /></div></div>
+      <div style={{ height: 460, overflow: 'hidden' }}><div style={{ transform: `translateY(${-Math.max(0, f - 100) * 1.7}px)` }}><CodePanel /></div></div>
     </div>
-    <div style={{ position: 'absolute', top: 914, left: 104, fontSize: 31, color: C.muted, ...appear(f, 115) }}>Recognize it through <span style={{ color: C.ink }}>classes, methods, and relationships.</span></div>
+    <div style={{ position: 'absolute', top: 914, left: 104, fontSize: 31, color: C.muted, ...appear(f, 132) }}>Recognize it through <span style={{ color: C.ink }}>classes, methods, and relationships.</span></div>
   </AbsoluteFill>;
 }
 
@@ -228,15 +232,20 @@ const details: Record<string, { crop: Crop; label: string }> = {
 function ProductShot({ number, chapter, title, clip, crop, note, frameWidth = 1720 }: { number: string; chapter: string; title: React.ReactNode; clip: string; crop: Crop; note?: string; frameWidth?: number }) {
   const f = useCurrentFrame();
   const detail = details[clip];
-  const width = Math.min(frameWidth, 1180);
-  const cardWidth = clip.startsWith('10_') ? 1050 : 850;
+  const hero = ['01_', '05_', '08_', '11_'].some((prefix) => clip.startsWith(prefix));
+  const width = Math.min(frameWidth, hero ? 1260 : 1180);
+  const camera = ease(f, 48, 130);
+  const pan = Number(clip.slice(0, 2)) % 2 ? 1 : -1;
+  const sideDetail = clip.startsWith('02_');
+  const cardWidth = sideDetail ? 650 : clip.startsWith('10_') ? 1050 : 850;
   const cardHeight = detail ? cardWidth * detail.crop[3] / detail.crop[2] : 0;
-  const t = ease(f, 65, 32);
+  const t = ease(f, sideDetail ? 45 : 65, 32);
   return <AbsoluteFill>
     <Chapter number={number}>{chapter}</Chapter>
     <Headline size={74} centered={['04_', '06_', '12_'].some((prefix) => clip.startsWith(prefix))}>{title}</Headline>
-    <Footage clip={clip} crop={crop} width={width} left={detail ? 210 : (1920 - width) / 2} top={215} />
-    {detail && <div style={{ position: 'absolute', right: 100, top: 786, width: cardWidth, height: cardHeight + 52, borderRadius: 18, background: 'var(--surface)', border: `1px solid ${C.line}`, boxShadow: '0 24px 48px var(--shadow)', overflow: 'hidden', opacity: t, transform: `perspective(1800px) translateY(${(1 - t) * 95 + Math.sin(f / 60) * 3}px) rotateX(${(1 - t) * -12}deg) scale(${0.93 + t * 0.07})` }}>
+    <AbsoluteFill style={{ transformOrigin: '50% 54%', transform: `translateX(${hero ? pan * camera * 24 : 0}px) scale(${1 + (hero ? camera * 0.055 : 0)})` }}><Footage clip={clip} crop={crop} width={width} left={detail ? 210 : (1920 - width) / 2} top={hero ? 192 : 215} /></AbsoluteFill>
+    {hero && <div style={{ position: 'absolute', left: 112, top: 480, width: 58, height: 170, borderLeft: `2px solid ${C.line}`, opacity: ease(f, 25), transform: `scaleY(${ease(f, 25)})` }}><div style={{ position: 'absolute', left: -5, top: camera * 148, width: 8, height: 22, background: C.cyan, borderRadius: 8 }} /></div>}
+    {detail && <div style={{ position: 'absolute', right: 100, top: sideDetail ? 525 : 786, width: cardWidth, height: cardHeight + 52, borderRadius: 18, background: 'var(--surface)', border: `1px solid ${C.line}`, boxShadow: '0 24px 48px var(--shadow)', overflow: 'hidden', opacity: t, transform: `perspective(1800px) translateY(${(1 - t) * 95 + Math.sin(f / 60) * 3}px) rotateX(${(1 - t) * -12}deg) scale(${0.93 + t * 0.07})` }}>
       <div style={{ height: 52, display: 'flex', alignItems: 'center', gap: 13, padding: '0 24px', color: C.mint, fontSize: 16, letterSpacing: 2.5 }}><span style={{ width: 6, height: 6, background: C.mint, borderRadius: 10 }} />{detail.label}<span style={{ marginLeft: 'auto', fontSize: 12, color: C.muted, letterSpacing: 1 }}>SOURCE DETAIL</span></div>
       <div style={{ position: 'relative', height: cardHeight }}><ScreenMedia clip={clip} crop={detail.crop} width={cardWidth} height={cardHeight} still /></div>
     </div>}
@@ -256,9 +265,9 @@ function Node({ x, y, w = 500, title, subtitle, delay, mint = false }: { x: numb
 function Graph() {
   const f = useCurrentFrame();
   const paths = [
-    { d: 'M 720 411 L 1130 411', delay: 75 },
-    { d: 'M 410 700 L 410 583 L 1320 583 L 1320 475', delay: 135 },
-    { d: 'M 1000 700 L 1000 627 L 1400 627 L 1400 475', delay: 160 },
+    { d: 'M 720 411 L 1130 411', delay: 40 },
+    { d: 'M 410 700 L 410 583 L 1320 583 L 1320 475', delay: 76 },
+    { d: 'M 1000 700 L 1000 627 L 1400 627 L 1400 475', delay: 95 },
   ];
   return <AbsoluteFill>
     <Chapter number="05">Graph Memory Copy / conceptual view</Chapter>
@@ -268,19 +277,67 @@ function Graph() {
       {paths.map((p, i) => <path key={i} d={p.d} pathLength={1} stroke={C.cyan} strokeWidth={2} fill="none" strokeDasharray={1} strokeDashoffset={1 - ease(f, p.delay, 40)} opacity={ease(f, p.delay, 10)} markerEnd="url(#arrow)" />)}
     </svg>
     <Node x={160} y={345} w={560} title="Archiver" subtitle="CONTEXT / STORED REFERENCE" delay={15} />
-    <Node x={1130} y={345} w={610} title="Compressor" subtitle="STRATEGY INTERFACE" delay={40} mint />
-    <Node x={160} y={700} title="ZipCompressor" subtitle="CONCRETE STRATEGY" delay={115} />
-    <Node x={750} y={700} title="GzipCompressor" subtitle="CONCRETE STRATEGY" delay={140} />
-    <Node x={1340} y={700} w={400} title="Strategy" subtitle="SUPPORTED EVIDENCE" delay={310} mint />
-    <div style={{ position: 'absolute', left: 785, top: 350, fontSize: 18, color: C.muted, ...appear(f, 90) }}>holds & delegates</div>
-    <div style={{ position: 'absolute', left: 480, top: 542, fontSize: 18, color: C.muted, ...appear(f, 150) }}>inherits the shared interface</div>
-    <div style={{ position: 'absolute', left: 1138, top: 492, fontFamily: mono, fontSize: 24, color: C.mint, ...appear(f, 60) }}>compress(data)</div>
+    <Node x={1130} y={345} w={610} title="Compressor" subtitle="STRATEGY INTERFACE" delay={26} mint />
+    <Node x={160} y={700} title="ZipCompressor" subtitle="CONCRETE STRATEGY" delay={65} />
+    <Node x={750} y={700} title="GzipCompressor" subtitle="CONCRETE STRATEGY" delay={86} />
+    <Node x={1340} y={700} w={400} title="Strategy" subtitle="SUPPORTED EVIDENCE" delay={170} mint />
+    <div style={{ position: 'absolute', left: 785, top: 350, fontSize: 18, color: C.muted, ...appear(f, 58) }}>holds & delegates</div>
+    <div style={{ position: 'absolute', left: 480, top: 542, fontSize: 18, color: C.muted, ...appear(f, 103) }}>inherits the shared interface</div>
+    <div style={{ position: 'absolute', left: 1138, top: 492, fontFamily: mono, fontSize: 24, color: C.mint, ...appear(f, 38) }}>compress(data)</div>
     <div style={{ position: 'absolute', left: 150, right: 150, top: 900, display: 'flex', alignItems: 'center', gap: 26 }}>
       {['SOURCE', 'STRUCTURE', 'RELATIONSHIPS', 'EVIDENCE'].map((item, i) => <React.Fragment key={item}>
-        {i > 0 && <span style={{ color: '#486272', opacity: ease(f, 190 + i * 35) }}>→</span>}
-        <div style={{ flex: 1, fontSize: 21, letterSpacing: 3, color: i === 3 ? C.mint : C.muted, ...appear(f, 185 + i * 35) }}>{item}</div>
+        {i > 0 && <span style={{ color: '#486272', opacity: ease(f, 155 + i * 16) }}>→</span>}
+        <div style={{ flex: 1, fontSize: 21, letterSpacing: 3, color: i === 3 ? C.mint : C.muted, ...appear(f, 150 + i * 16) }}>{item}</div>
       </React.Fragment>)}
     </div>
+  </AbsoluteFill>;
+}
+
+const benefitShots: { word: string; caption: string; clip: string; crop: Crop }[] = [
+  { word: 'LEARN.', caption: 'Make the concept click.', clip: '05_strategy_module', crop: [552, 92, 1090, 440] },
+  { word: 'ANALYZE.', caption: 'From source code to structure.', clip: '08_studio_analyze', crop: [250, 250, 1420, 570] },
+  { word: 'UNDERSTAND.', caption: 'Follow the delegation.', clip: '10_strategy_evidence_detail', crop: [250, 610, 1050, 425] },
+  { word: 'DOCUMENT.', caption: 'From code to context.', clip: '11_generated_documentation', crop: [255, 432, 1040, 420] },
+];
+
+function BenefitBeat({ index }: { index: number }) {
+  const f = useCurrentFrame();
+  const shot = benefitShots[index];
+  const t = ease(f, 2, 23);
+  const exit = ease(f, 75, 15);
+  return <AbsoluteFill style={{ opacity: 1 - exit * 0.25 }}>
+    <Chapter number={`0${index + 1}`}>One connected workflow</Chapter>
+    <div style={{ position: 'absolute', top: 326, left: 100, width: 710, zIndex: 1, transform: `translateX(${-exit * 70}px)` }}>
+      <div style={{ fontSize: shot.word.length > 10 ? 89 : 119, lineHeight: 1, fontWeight: 800, letterSpacing: -6, color: index % 2 ? C.ink : C.cyan, transform: `translateY(${(1 - t) * 100}px) scale(${0.85 + t * 0.15})`, transformOrigin: 'left center', opacity: t }}>{shot.word}</div>
+      <div style={{ marginTop: 31, width: 515, fontSize: 33, lineHeight: 1.22, color: C.muted }}><KineticText delay={16}>{shot.caption}</KineticText></div>
+      <div style={{ display: 'flex', gap: 13, marginTop: 45 }}>{benefitShots.map((_, i) => <div key={i} style={{ height: 7, width: i === index ? 84 : 26, borderRadius: 6, background: i === index ? C.cyan : C.line, transform: `scaleX(${ease(f, 18 + i * 3, 16)})`, transformOrigin: 'left' }} />)}</div>
+    </div>
+    <AbsoluteFill style={{ transform: `translateX(${ease(f, 28, 60) * -28}px) scale(${1 + ease(f, 28, 60) * 0.035})`, transformOrigin: '75% 60%' }}>
+      <Footage clip={shot.clip} crop={shot.crop} width={1190} left={690} top={220} />
+    </AbsoluteFill>
+    <div style={{ position: 'absolute', left: 112, top: 755, fontFamily: mono, fontSize: 22, color: C.cyan, ...appear(f, 33) }}>{String(index + 1).padStart(2, '0')} <span style={{ color: C.muted }}> / 04</span></div>
+  </AbsoluteFill>;
+}
+
+function WorkflowRecap() {
+  const f = useCurrentFrame();
+  return <AbsoluteFill>
+    <Chapter number="08">The connected workflow</Chapter>
+    <Headline centered size={84}>From learning to understanding.</Headline>
+    <div style={{ position: 'absolute', top: 368, left: 96, right: 96, height: 2, background: C.line, transform: `scaleX(${ease(f, 3, 50)})`, transformOrigin: 'left' }} />
+    {benefitShots.map((shot, i) => <div key={shot.clip} style={{ position: 'absolute', left: 80 + i * 450, top: 291, width: 430, opacity: ease(f, i * 8, 22), transform: `translateY(${(1 - ease(f, i * 8, 22)) * 80}px)` }}>
+      <div style={{ textAlign: 'center', fontSize: 27, fontWeight: 700, letterSpacing: 1, color: i === 2 ? C.cyan : C.ink }}>{shot.word}</div>
+      <div style={{ height: 25, width: 25, borderRadius: '50%', background: C.cyan, border: '7px solid var(--bg)', margin: '34px auto 0' }} />
+      <Footage clip={shot.clip} crop={shot.crop} width={450} left={-10} top={130} />
+    </div>)}
+    <div style={{ position: 'absolute', left: 100, right: 100, top: 813, textAlign: 'center', fontSize: 33, color: C.muted }}><KineticText delay={36}>Design-pattern theory. Actual C++ implementation.</KineticText></div>
+  </AbsoluteFill>;
+}
+
+function BenefitMontage() {
+  return <AbsoluteFill>
+    {benefitShots.map((shot, index) => <Sequence key={shot.clip} from={index * 90} durationInFrames={90}><BenefitBeat index={index} /></Sequence>)}
+    <Sequence from={360} durationInFrames={90}><WorkflowRecap /></Sequence>
   </AbsoluteFill>;
 }
 
@@ -306,27 +363,29 @@ export function AVP({ voiceover, music = true }: AVPProps) {
   return <AbsoluteFill style={{ ...themeStyle(sceneIndex(f) % 2 === 0), color: C.ink, fontFamily: sans, background: C.bg }}>
     <Backdrop />
     <Sequence from={0} durationInFrames={240}><Hook /></Sequence>
-    <Sequence from={240} durationInFrames={390}><Theory /></Sequence>
-    <Sequence from={630} durationInFrames={240}><Brand /></Sequence>
-    <Sequence from={870} durationInFrames={240}><ProductShot number="02" chapter="Project-guided learning" title={<>Start with <span style={{ color: C.cyan }}>what matters.</span></>} clip="01_pm_project_spec" crop={[625, 455, 950, 390]} note="Community Project Prioritization System" /></Sequence>
-    <Sequence from={1110} durationInFrames={240}><ProductShot number="02" chapter="Relevant concepts" title={<>Your project. <span style={{ color: C.mint }}>A focused direction.</span></>} clip="02_pm_strategy_recommendation" crop={[680, 368, 825, 330]} /></Sequence>
-    <Sequence from={1350} durationInFrames={90}><ProductShot number="03" chapter="Targeted learning / pre-test" title="Find your starting point." clip="03_intern_pretest" crop={[550, 402, 830, 335]} /></Sequence>
-    <Sequence from={1440} durationInFrames={90}><ProductShot number="03" chapter="Targeted learning / next step" title={<>Focus on <span style={{ color: C.mint }}>Strategy.</span></>} clip="04_strategy_recommended" crop={[844, 258, 470, 240]} frameWidth={1350} /></Sequence>
-    <Sequence from={1530} durationInFrames={165}><ProductShot number="03" chapter="Learn / Strategy" title="Make the concept click." clip="05_strategy_module" crop={[552, 92, 1090, 440]} /></Sequence>
-    <Sequence from={1695} durationInFrames={105}><ProductShot number="03" chapter="Apply your understanding" title="Learn. Reflect. Apply." clip="06_strategy_assessment" crop={[610, 210, 980, 395]} /></Sequence>
-    <Sequence from={1800} durationInFrames={120}><ProductShot number="04" chapter="Studio / real C++ source" title="Now, understand the implementation." clip="07_studio_source_upload" crop={[250, 250, 1420, 570]} note="Verified C++ Strategy example · compression" /></Sequence>
-    <Sequence from={1920} durationInFrames={120}><ProductShot number="04" chapter="Analyze" title={<>From source code <span style={{ color: C.cyan }}>to structure.</span></>} clip="08_studio_analyze" crop={[250, 250, 1420, 570]} /></Sequence>
-    <Sequence from={2040} durationInFrames={450}><Graph /></Sequence>
-    <Sequence from={2490} durationInFrames={240}><ProductShot number="06" chapter="Supported design-pattern evidence" title={<>Don't just detect it. <span style={{ color: C.mint }}>Understand why.</span></>} clip="09_strategy_result_overview" crop={[255, 570, 1040, 420]} /></Sequence>
-    <Sequence from={2730} durationInFrames={240}><ProductShot number="06" chapter="Traceable source evidence" title={<>Follow the <span style={{ color: C.cyan }}>delegation.</span></>} clip="10_strategy_evidence_detail" crop={[250, 610, 1050, 425]} /></Sequence>
-    <Sequence from={2970} durationInFrames={180}><ProductShot number="07" chapter="Document" title={<>From code <span style={{ color: C.cyan }}>to context.</span></>} clip="11_generated_documentation" crop={[255, 432, 1040, 420]} /></Sequence>
-    <Sequence from={3150} durationInFrames={150}><ProductShot number="07" chapter="Keep the explanation" title="Export your documentation." clip="12_export_controls" crop={[255, 112, 1040, 420]} note="PDF · Word · Markdown" /></Sequence>
+    <Sequence from={240} durationInFrames={210}><Theory /></Sequence>
+    <Sequence from={450} durationInFrames={150}><Brand /></Sequence>
+    <Sequence from={600} durationInFrames={240}><ProductShot number="02" chapter="Project-guided learning" title={<>Start with <span style={{ color: C.cyan }}>what matters.</span></>} clip="01_pm_project_spec" crop={[625, 455, 950, 390]} note="Community Project Prioritization System" /></Sequence>
+    <Sequence from={840} durationInFrames={240}><ProductShot number="02" chapter="Relevant concepts" title={<>Your project. <span style={{ color: C.mint }}>A focused direction.</span></>} clip="02_pm_strategy_recommendation" crop={[680, 368, 825, 330]} /></Sequence>
+    <Sequence from={1080} durationInFrames={90}><ProductShot number="03" chapter="Targeted learning / pre-test" title="Find your starting point." clip="03_intern_pretest" crop={[550, 402, 830, 335]} /></Sequence>
+    <Sequence from={1170} durationInFrames={90}><ProductShot number="03" chapter="Targeted learning / next step" title={<>Focus on <span style={{ color: C.mint }}>Strategy.</span></>} clip="04_strategy_recommended" crop={[844, 258, 470, 240]} frameWidth={1350} /></Sequence>
+    <Sequence from={1260} durationInFrames={165}><ProductShot number="03" chapter="Learn / Strategy" title="Make the concept click." clip="05_strategy_module" crop={[552, 92, 1090, 440]} /></Sequence>
+    <Sequence from={1425} durationInFrames={105}><ProductShot number="03" chapter="Apply your understanding" title="Learn. Reflect. Apply." clip="06_strategy_assessment" crop={[610, 210, 980, 395]} /></Sequence>
+    <Sequence from={1530} durationInFrames={120}><ProductShot number="04" chapter="Studio / real C++ source" title="Now, understand the implementation." clip="07_studio_source_upload" crop={[250, 250, 1420, 570]} note="Verified C++ Strategy example · compression" /></Sequence>
+    <Sequence from={1650} durationInFrames={120}><ProductShot number="04" chapter="Analyze" title={<>From source code <span style={{ color: C.cyan }}>to structure.</span></>} clip="08_studio_analyze" crop={[250, 250, 1420, 570]} /></Sequence>
+    <Sequence from={1770} durationInFrames={270}><Graph /></Sequence>
+    <Sequence from={2040} durationInFrames={240}><ProductShot number="06" chapter="Supported design-pattern evidence" title={<>Don't just detect it. <span style={{ color: C.mint }}>Understand why.</span></>} clip="09_strategy_result_overview" crop={[255, 570, 1040, 420]} /></Sequence>
+    <Sequence from={2280} durationInFrames={240}><ProductShot number="06" chapter="Traceable source evidence" title={<>Follow the <span style={{ color: C.cyan }}>delegation.</span></>} clip="10_strategy_evidence_detail" crop={[250, 610, 1050, 425]} /></Sequence>
+    <Sequence from={2520} durationInFrames={180}><ProductShot number="07" chapter="Document" title={<>From code <span style={{ color: C.cyan }}>to context.</span></>} clip="11_generated_documentation" crop={[255, 432, 1040, 420]} /></Sequence>
+    <Sequence from={2700} durationInFrames={150}><ProductShot number="07" chapter="Keep the explanation" title="Export your documentation." clip="12_export_controls" crop={[255, 112, 1040, 420]} note="PDF · Word · Markdown" /></Sequence>
+    <Sequence from={2850} durationInFrames={450}><BenefitMontage /></Sequence>
     <Sequence from={3300} durationInFrames={180}><Brand close /></Sequence>
-    <Sequence from={690} durationInFrames={150}><Codi duration={150} /></Sequence>
-    <Sequence from={1545} durationInFrames={130}><Codi duration={130} learning /></Sequence>
+    <Sequence from={480} durationInFrames={110}><Codi duration={110} /></Sequence>
+    <Sequence from={1275} durationInFrames={130}><Codi duration={130} learning /></Sequence>
     <Sequence from={3315} durationInFrames={165}><Codi duration={165} /></Sequence>
     <ShapeWipe />
     {music && <Audio src={staticFile('score.wav')} volume={voiceover ? 0.36 : 0.7} />}
+    {music && <Audio src={staticFile('commercial-cues.wav')} volume={voiceover ? 0.45 : 0.75} />}
     {voiceover && <Audio src={staticFile(voiceover)} volume={1} />}
     <AbsoluteFill style={{ pointerEvents: 'none', background: C.bg, opacity: interpolate(f, [0, 12, DURATION - 14, DURATION - 1], [1, 0, 0, 1], clamp) }} />
   </AbsoluteFill>;

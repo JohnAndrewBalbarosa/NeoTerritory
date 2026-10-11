@@ -122,3 +122,13 @@ V5 passed typechecking, full-frame decoding and audio validation at the unchange
 The v6 edition also centers both opening messages (“You know the pattern” and “But can you find it in the code?”) within equal canvas margins. Their animated accent line expands symmetrically beneath them. Render with `--revision v6 --serial`; other content and timing remain unchanged.
 
 V6 passed typechecking, full video decoding and audio validation. Both opening states were inspected in the final encoded video and confirmed centered without clipping.
+
+## Commercial pacing edition (v7)
+
+The seventh edition changes editorial rhythm: hook 0–8s; staged theory 8–15s; brand reveal 15–20s; project workflow 20–36s; learning 36–51s; Studio 51–59s; structural diagram 59–68s; evidence 68–84s; documentation/export 84–95s; kinetic benefit montage 95–110s; closing 110–116s. Earlier timing descriptions above are historical edition records. All original product states remain represented.
+
+The montage pairs four short verb-led beats with actual captured screens, then connects them in a four-device recap. Product shots alternate full-device presentations and evidence close-ups, with camera movement and varied wipes. Centered headings, the alternating white/dark palette and three subtle Codi cameos are retained. `sound-design.mjs` synthesizes original low-level air sweeps and two short brand chords at the new edit points; `render.mjs` writes the ignored cue WAV before bundling. No audio from the reference videos is copied. Both score and cues duck for optional narration.
+
+Use `npm run avp:render -- --prepared --revision v7 --serial`. Review frames now cover the new theory stages, product scenes, diagram progression, all montage beats and closing. `narration.md` follows this edition; earlier recordings require retiming.
+
+V7 passed 12 AVP regression tests, typechecking, all 3,480 decoded frames and mixed-audio validation (−20.3 dBFS peak). Review covered 26 chapter previews, 29 encoded-film samples and 16 montage-transition samples. Independent review found no blocking layout, evidence or timing issue. The separate master and acceptance record are in `film/v7/`.

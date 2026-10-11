@@ -11,17 +11,24 @@ The composition ducks music automatically when narration is supplied. Recheck th
 | Time | Voice-over |
 | --- | --- |
 | 0:00–0:08 | Understanding a design pattern is one thing. Finding it inside unfamiliar C++ code is another. |
-| 0:08–0:21 | Strategy gives us one interface and interchangeable algorithms. In an implementation, that idea becomes classes, methods, and relationships. How do we connect them? |
-| 0:21–0:29 | Introducing CodiNeo. Learn. Analyze. Understand. Document. |
-| 0:29–0:37 | Start with what your project needs. A community project system must change how it prioritizes work. |
-| 0:37–0:45 | CodiNeo connects those requirements to relevant learning. Here, the recommended concept is Strategy. |
-| 0:45–0:51 | A pre-test helps identify what needs attention. |
-| 0:51–1:00 | Explore the concept, check your understanding, and apply it in C++. |
-| 1:00–1:08 | Bring actual source code into Studio. This verified example uses Strategy to switch compression behavior. |
-| 1:08–1:23 | Follow the structure: an interface, concrete implementations, a stored reference, and delegation. CodiNeo identifies supported design-pattern evidence. |
-| 1:23–1:39 | Don't just detect it. Understand why. Trace the result to the relevant classes and source lines. See how the implementation connects. |
-| 1:39–1:50 | Bring the explanation and the implementation together. Then export the documentation for continued learning and discussion. |
+| 0:08–0:15 | One interface. Interchangeable algorithms. Now see how the idea connects to real code. |
+| 0:15–0:20 | Introducing CodiNeo. Learn. Analyze. Understand. Document. |
+| 0:20–0:28 | Start with what your project needs. A community project system must change how it prioritizes work. |
+| 0:28–0:36 | Connect those requirements to relevant learning. Here, the recommended concept is Strategy. |
+| 0:36–0:42 | A pre-test helps identify what needs attention. |
+| 0:42–0:51 | Explore the concept, check your understanding, and apply it in C++. |
+| 0:51–0:59 | Bring actual source code into Studio. This example uses Strategy to switch compression behavior. |
+| 0:59–1:08 | Follow the interface, implementations, stored reference, and delegation. See supported evidence in the structure. |
+| 1:08–1:24 | Don't just detect it. Understand why. Trace the result to the relevant classes and source lines. See how the implementation connects. |
+| 1:24–1:35 | Bring the explanation and implementation together. Export the documentation for continued learning and discussion. |
+| 1:35–1:38 | Learn the concept. |
+| 1:38–1:41 | Analyze real code. |
+| 1:41–1:44 | Understand the evidence. |
+| 1:44–1:47 | Document what you discover. |
+| 1:47–1:50 | One connected workflow. |
 | 1:50–1:56 | CodiNeo. From design-pattern theory to actual C++ implementation. |
+
+Timing follows v7. Earlier recorded voice-overs need retiming before reuse.
 
 ## Editorial provenance
 
