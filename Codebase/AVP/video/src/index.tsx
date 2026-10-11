@@ -134,10 +134,10 @@ function Hook() {
     <div style={{ position: 'absolute', left: 690, top: -30, transform: `perspective(1600px) rotateY(-12deg) translateY(${-f * 0.12}px)`, opacity: 0.6 }}><CodePanel subdued /></div>
     <AbsoluteFill style={{ background: 'linear-gradient(90deg, var(--bg) 5%, color-mix(in srgb, var(--bg) 87%, transparent) 48%, transparent)' }} />
     <Chapter number="00">The gap</Chapter>
-    <div style={{ position: 'absolute', left: 100, top: 315, width: 1500, fontWeight: 700, letterSpacing: -5, fontSize: second ? 110 : 128, lineHeight: 1.06, ...appear(f, second ? 110 : 12) }}>
+    <div style={{ position: 'absolute', left: 100, right: 100, top: 315, textAlign: 'center', fontWeight: 700, letterSpacing: -5, fontSize: second ? 110 : 128, lineHeight: 1.06, ...appear(f, second ? 110 : 12) }}>
       <KineticText key={String(second)} delay={second ? 110 : 12}>{second ? <>BUT CAN YOU FIND IT<br /><span style={{ color: C.cyan }}>IN THE CODE?</span></> : <>YOU KNOW<br />THE PATTERN.</>}</KineticText>
     </div>
-    <div style={{ position: 'absolute', left: 106, top: 710, width: 80 + ease(f, 20, 180) * 570, height: 3, background: `linear-gradient(90deg, ${C.cyan}, transparent)` }} />
+    <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 710, width: 80 + ease(f, 20, 180) * 570, height: 3, background: `linear-gradient(90deg, transparent, ${C.cyan}, transparent)` }} />
   </AbsoluteFill>;
 }
 

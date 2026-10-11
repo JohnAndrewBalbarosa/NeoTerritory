@@ -118,3 +118,7 @@ The v5 edition centers five selected headings: the theory introduction, Strategy
 If concurrent browser startup fails during export, `--serial` uses one rendering worker. The v5 export used this mode after four-worker startup returned no page response; a one-second diagnostic render succeeded before the full retry.
 
 V5 passed typechecking, full-frame decoding and audio validation at the unchanged 1080p/30fps/116-second specification. All five edited headers were inspected in samples from the final encoded film without clipping or overlap.
+
+The v6 edition also centers both opening messages (“You know the pattern” and “But can you find it in the code?”) within equal canvas margins. Their animated accent line expands symmetrically beneath them. Render with `--revision v6 --serial`; other content and timing remain unchanged.
+
+V6 passed typechecking, full video decoding and audio validation. Both opening states were inspected in the final encoded video and confirmed centered without clipping.
