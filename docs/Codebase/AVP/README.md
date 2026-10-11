@@ -112,3 +112,9 @@ The v3 photorealistic-laptop edition passed 12 AVP tests and the Remotion typech
 The v4 edition adds the user-supplied Codi mascot unchanged as `video/assets/codi.svg`. The SVG embeds a single raster image; the composition animates the complete artwork with a spring entrance, gentle bob/tilt, and exit rather than inventing separate limbs. Three short cameos accompany the introduction, learning, and close, outside the laptop display and headline areas. Use `--revision v4` to preserve earlier editions.
 
 The v4 mascot edition passed all 12 AVP tests, typechecking, full 3,480-frame decoding, and audio validation at the unchanged 1080p/30fps/116-second specification. Codi’s dark/light placements and 12 encoded entrance samples were visually reviewed. The supplied SVG is byte-identical to the versioned asset.
+
+The v5 edition centers five selected headings: the theory introduction, Strategy focus, learning checkpoint, structural diagram, and documentation export. Equal side margins keep these titles centered on the video canvas. Other walkthrough headings retain left alignment. The v4 mascot animation, source content, palette and timing remain unchanged. Render with `--revision v5`.
+
+If concurrent browser startup fails during export, `--serial` uses one rendering worker. The v5 export used this mode after four-worker startup returned no page response; a one-second diagnostic render succeeded before the full retry.
+
+V5 passed typechecking, full-frame decoding and audio validation at the unchanged 1080p/30fps/116-second specification. All five edited headers were inspected in samples from the final encoded film without clipping or overlap.

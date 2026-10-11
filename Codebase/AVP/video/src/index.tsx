@@ -114,8 +114,8 @@ function Chapter({ number, children }: { number: string; children: React.ReactNo
   </div>;
 }
 
-function Headline({ children, size = 80, top = 118 }: { children: React.ReactNode; size?: number; top?: number }) {
-  return <div style={{ position: 'absolute', left: 100, top, right: 90, fontSize: size, fontWeight: 700, letterSpacing: -3.5, lineHeight: 1.06, }}><KineticText delay={4}>{children}</KineticText></div>;
+function Headline({ children, size = 80, top = 118, centered = false }: { children: React.ReactNode; size?: number; top?: number; centered?: boolean }) {
+  return <div style={{ position: 'absolute', left: 100, top, right: 100, textAlign: centered ? 'center' : 'left', fontSize: size, fontWeight: 700, letterSpacing: -3.5, lineHeight: 1.06, }}><KineticText delay={4}>{children}</KineticText></div>;
 }
 
 function CodePanel({ subdued = false, evidence = false }: { subdued?: boolean; evidence?: boolean }) {
@@ -145,7 +145,7 @@ function Theory() {
   const f = useCurrentFrame();
   return <AbsoluteFill>
     <Chapter number="01">From the concept to the implementation</Chapter>
-    <Headline>Knowing the idea is the beginning.</Headline>
+    <Headline centered>Knowing the idea is the beginning.</Headline>
     <div style={{ position: 'absolute', left: 100, top: 290, width: 655, height: 580, borderRadius: 25, border: `1px solid ${C.line}`, background: 'var(--surface)', boxShadow: '0 24px 80px var(--shadow)', padding: 42, ...appear(f, 10) }}>
       <div style={{ fontFamily: mono, color: C.cyan, letterSpacing: 4, fontSize: 18 }}>THEORY / STRATEGY</div>
       <div style={{ fontSize: 42, marginTop: 43, letterSpacing: -1.2 }}>One interface.<br />Interchangeable algorithms.</div>
@@ -234,7 +234,7 @@ function ProductShot({ number, chapter, title, clip, crop, note, frameWidth = 17
   const t = ease(f, 65, 32);
   return <AbsoluteFill>
     <Chapter number={number}>{chapter}</Chapter>
-    <Headline size={74}>{title}</Headline>
+    <Headline size={74} centered={['04_', '06_', '12_'].some((prefix) => clip.startsWith(prefix))}>{title}</Headline>
     <Footage clip={clip} crop={crop} width={width} left={detail ? 210 : (1920 - width) / 2} top={215} />
     {detail && <div style={{ position: 'absolute', right: 100, top: 786, width: cardWidth, height: cardHeight + 52, borderRadius: 18, background: 'var(--surface)', border: `1px solid ${C.line}`, boxShadow: '0 24px 48px var(--shadow)', overflow: 'hidden', opacity: t, transform: `perspective(1800px) translateY(${(1 - t) * 95 + Math.sin(f / 60) * 3}px) rotateX(${(1 - t) * -12}deg) scale(${0.93 + t * 0.07})` }}>
       <div style={{ height: 52, display: 'flex', alignItems: 'center', gap: 13, padding: '0 24px', color: C.mint, fontSize: 16, letterSpacing: 2.5 }}><span style={{ width: 6, height: 6, background: C.mint, borderRadius: 10 }} />{detail.label}<span style={{ marginLeft: 'auto', fontSize: 12, color: C.muted, letterSpacing: 1 }}>SOURCE DETAIL</span></div>
@@ -262,7 +262,7 @@ function Graph() {
   ];
   return <AbsoluteFill>
     <Chapter number="05">Graph Memory Copy / conceptual view</Chapter>
-    <Headline size={77}>Follow the structure.</Headline>
+    <Headline size={77} centered>Follow the structure.</Headline>
     <svg width={1920} height={1080} style={{ position: 'absolute', inset: 0 }}>
       <defs><marker id="arrow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="9" markerHeight="9" orient="auto"><path d="M1 1 L11 6 L1 11" fill="none" stroke={C.cyan} strokeWidth="1.5" /></marker></defs>
       {paths.map((p, i) => <path key={i} d={p.d} pathLength={1} stroke={C.cyan} strokeWidth={2} fill="none" strokeDasharray={1} strokeDashoffset={1 - ease(f, p.delay, 40)} opacity={ease(f, p.delay, 10)} markerEnd="url(#arrow)" />)}

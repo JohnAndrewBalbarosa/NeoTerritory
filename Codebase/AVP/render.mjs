@@ -40,7 +40,7 @@ const destination = path.join(output, 'CodiNeo-AVP.mp4');
 let reported = -1;
 await renderMedia({
   serveUrl, composition, inputProps, browserExecutable, outputLocation: destination,
-  codec: 'h264', audioCodec: 'aac', pixelFormat: 'yuv420p', crf: 18, x264Preset: 'medium', concurrency: 4,
+  codec: 'h264', audioCodec: 'aac', pixelFormat: 'yuv420p', crf: 18, x264Preset: 'medium', concurrency: process.argv.includes('--serial') ? 1 : 4,
   timeoutInMilliseconds: 120000,
   onProgress: ({ progress }) => { const step = Math.floor(progress * 10); if (step > reported) { reported = step; console.log(`Rendering ${step * 10}%`); } },
 });
