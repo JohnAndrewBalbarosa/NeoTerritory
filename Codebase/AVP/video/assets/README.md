@@ -8,3 +8,7 @@ Prompt used with the built-in tool (`transparent_background: true`):
 
 
 Canvas: 1536×1024. Display insert: x223, y96, width1090, height630. Preserve asset aspect ratio and alpha. Render preparation copies this directory to `public/devices/`.
+
+## Codi mascot
+
+`codi.svg` is the user-supplied `cody_codineo_mascot_transparent.svg`, copied byte-for-byte. The user names the mascot **Codi**. Its embedded image and design are preserved; only whole-artwork position, scale, opacity and rotation are animated.

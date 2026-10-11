@@ -284,6 +284,22 @@ function Graph() {
   </AbsoluteFill>;
 }
 
+// Animate the supplied artwork as one piece: the SVG embeds a single PNG.
+// The brief cameos stay outside product screens and brand text.
+function Codi({ duration, learning = false }: { duration: number; learning?: boolean }) {
+  const f = useCurrentFrame();
+  const enter = spring({ frame: f, fps: FPS, config: { damping: 15, stiffness: 125, mass: 0.7 } });
+  const exit = 1 - ease(f, duration - 14, 13);
+  const settle = ease(f, 28, 20);
+  const rock = Math.sin(Math.max(0, f - 24) / 9) * 3 * settle;
+  const bob = Math.sin(Math.max(0, f - 24) / 13) * 5 * settle;
+  const width = learning ? 205 : 230;
+  return <div style={{ position: 'absolute', right: 105, top: learning ? 675 : 704, width, opacity: ease(f, 0, 10) * exit, transformOrigin: '50% 100%', transform: `translateY(${(1 - enter) * 100 + bob + (1 - exit) * 55}px) rotate(${rock}deg) scale(${0.88 + enter * 0.12})` }}>
+    <Img src={staticFile('devices/codi.svg')} alt="Codi, the CodiNeo mascot" style={{ width: '100%', display: 'block' }} />
+    <div style={{ textAlign: 'center', marginTop: 5, fontSize: 19, fontWeight: 600, letterSpacing: 2, color: C.muted }}>Codi</div>
+  </div>;
+}
+
 export type AVPProps = { voiceover?: string; music?: boolean };
 export function AVP({ voiceover, music = true }: AVPProps) {
   const f = useCurrentFrame();
@@ -306,6 +322,9 @@ export function AVP({ voiceover, music = true }: AVPProps) {
     <Sequence from={2970} durationInFrames={180}><ProductShot number="07" chapter="Document" title={<>From code <span style={{ color: C.cyan }}>to context.</span></>} clip="11_generated_documentation" crop={[255, 432, 1040, 420]} /></Sequence>
     <Sequence from={3150} durationInFrames={150}><ProductShot number="07" chapter="Keep the explanation" title="Export your documentation." clip="12_export_controls" crop={[255, 112, 1040, 420]} note="PDF · Word · Markdown" /></Sequence>
     <Sequence from={3300} durationInFrames={180}><Brand close /></Sequence>
+    <Sequence from={690} durationInFrames={150}><Codi duration={150} /></Sequence>
+    <Sequence from={1545} durationInFrames={130}><Codi duration={130} learning /></Sequence>
+    <Sequence from={3315} durationInFrames={165}><Codi duration={165} /></Sequence>
     <ShapeWipe />
     {music && <Audio src={staticFile('score.wav')} volume={voiceover ? 0.36 : 0.7} />}
     {voiceover && <Audio src={staticFile(voiceover)} volume={1} />}
